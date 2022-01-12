@@ -1,0 +1,12 @@
+{
+    "name": "juekr/php-podlib",
+    "require-dev": {
+        "phpunit/phpunit": "^9"
+    },
+    "require": {
+        "neitanod/forceutf8": "^2.0"
+    },
+    "autoload": {
+        "psr-0": { "PHPPodLib\\": "src/"}
+    }
+}
