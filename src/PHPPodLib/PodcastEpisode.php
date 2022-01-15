@@ -102,7 +102,7 @@ class PodcastEpisode {
 
         $this->extractChapters();
 
-        foreach (array("guid", "title", "description") as $lowHangingFruit):
+        foreach (array("guid", "title", "description", "link") as $lowHangingFruit):
             $this->meta[$lowHangingFruit] = (string) $this->xmlItem->$lowHangingFruit;
         endforeach;
         

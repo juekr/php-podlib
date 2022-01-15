@@ -52,7 +52,7 @@ class PodcastDBWrapper {
             "last_updated" => ["DATETIME", "NOT NULL"],
             "shownotes" => ["TEXT", "NOT NULL"],
             "summary" => ["TEXT", "NOT NULL"],
-            "duration" => ["INT", "NOT NULL"]
+            "duration" => ["VARCHAR(100)", "NOT NULL"]
             // "PRIMARY KEY (<id>)"
         ),
         "tags" => array(
@@ -147,7 +147,7 @@ class PodcastDBWrapper {
 
     public function getEpisodes($filter = [], $order = "episodespubdate ASC", bool $andOrOr = true) {
         $where = array();
-
+        
         foreach ($filter as $f):
             $key = $f[0]; 
             $value = $f[1];
@@ -333,8 +333,8 @@ class PodcastDBWrapper {
                     try {
                         $contents = @file_get_contents($link);
                         if (empty($contents)) throw new Exception('Site not reachable/found.');
-                        (preg_match_all("!<meta[^>]*name=[\"']+keywords[\"']+[^>]*content=[\"']+([^\"^']*)[\"']+!isU", $contents, $out));
-                        if(!empty($out[1][0])):
+                        $pattern = "!<meta[^>]*name=[\"']+keywords[\"']+[^>]*content=[\"']+([^\"^']*)[\"']+!isU";
+                        if (preg_match_all($pattern, $contents, $out)):
                             $tags = array_map("trim", explode(",", $out[1][0]));
                         endif;
                    } catch (\Exception $e) {
@@ -429,17 +429,17 @@ class PodcastDBWrapper {
         endif;
 
         $values = [
-            "title" => $podcast->getTitle(),
-            "authors" => $podcast->getAuthor(),
-            "contact" => $podcast->getOwnerEmail(),
+            "title" => !empty($additionalFields["name"]) ? $additionalFields["name"] : $podcast->getTitle(),
+            "authors" => !empty($additionalFields["author"]) ? $additionalFields["author"] : $podcast->getAuthor(),
+            "contact" => !empty($additionalFields["contact"]) ? $additionalFields["contact"] : $podcast->getOwnerEmail(),
             "categories" => implode(", ", $podcast->getCategories(false)),
-            "website" => $podcast->getLink(),
+            "website" => !empty($additionalFields["website"]) ? $additionalFields["website"] : $podcast->getLink(),
             "cover" => $podcast->getCover(),
             "last_update" => $now->format('Y-m-d H:i:s'),
             "hash" => $podcast->getHash(),
             "description" => $podcast->getDescription(),
             "summary" => $podcast->getSummary(),
-            "slug" => $this->slugify($podcast->getTitle()),
+            "slug" => !empty($additionalFields["slug"]) ? $additionalFields["slug"] : $this->slugify($podcast->getTitle()),
             "shortname" => (count($additionalFields) > 0 && isset($additionalFields["shortname"]) ? $additionalFields["shortname"] : ""), 
             "color" => $color,
             "colorcontrast" => $contrast,
