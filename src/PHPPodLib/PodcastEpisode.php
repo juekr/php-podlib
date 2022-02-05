@@ -6,7 +6,7 @@
 
 namespace PHPPodLib;
 
-require_once('./vendor/autoload.php');
+require_once(__DIR__.'/../../../../autoload.php');
 
 class PodcastEpisode {
     private $xmlItem;
@@ -54,11 +54,10 @@ class PodcastEpisode {
     public function getHash() { return $this->itemHash; }
     
     public function getDuration(bool $inSeconds = false) { 
-        if ($this->getMeta("duration") == null) return 0;
-        if ($inSeconds === false) return $this->getMeta("duration"); 
-        $duration = 0;
-        $dparts = explode(":", $this->getMeta("duration"));
-        $duration += (isset($dparts[2]) ? $dparts[2] : 0) + (isset($dparts[1]) ? $dparts[1] : 0) * 60 + $dparts[0] * 3600;
+        $duration = $this->getMeta("duration");
+        if (empty($duration)) $duration = 0;
+        if ($inSeconds === true) return $duration; 
+        if (substr_count($duration, ":") == 0) return $this->convertSecondsToTimestring($duration);
         return $duration;
     }
 
@@ -168,9 +167,9 @@ class PodcastEpisode {
             endif;
         endif;
         if (strpos($duration, ":") >= 0):
-            $this->meta["duration"] = $duration;
+            $this->meta["duration"] = $this->convertTimstringToSeconds($duration);
         else:
-            $this->meta["duration"] = $this->convertSecondsToTimestring($duration);
+            $this->meta["duration"] = $duration;
         endif;
     }
 
@@ -241,6 +240,24 @@ class PodcastEpisode {
 		if ($extralong) return ($days > 0 ? $days." Tage, " : "") . $hours." Stunden, ".$minutes." Minuten, ".$duration." Sekunden";
 		return ($days > 0 ? $days.":" : "") . $hours.":".sprintf("%02d", $minutes).":".sprintf("%02d", $duration);
 	}
+
+    private function convertTimstringToSeconds($string) {
+        if (substr_count($string, ":") == 0):
+            try { 
+                $string = intval($string);
+            } catch (\Exception $e) {
+                $string = 0;
+            }
+            return $string;
+        endif;
+        $parts = explode(":", $string);
+        $len = (count($parts));
+        if ($len >= 1) $seconds = $parts[$len-1]; #seconds
+        if ($len >= 2) $seconds += 60 * $parts[$len-2]; #minutes
+        if ($len >= 3) $seconds += 60 * 60 * $parts[$len-3]; #hours
+        if ($len >= 4) $seconds += 24 * 60 * 60 * $parts[$len-4]; #days
+        return $seconds;
+    }
 
     public function isMatch(string $matchtype = null, string $field = null, string $pattern = null) {
         // Currently the function for matching tags, title, episodetype and basically every other xml tag content support searching for "string", substring or subarray "contains" or "regex" patterns

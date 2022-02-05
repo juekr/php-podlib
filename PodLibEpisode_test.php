@@ -12,6 +12,14 @@ final class PodLibEpisode_test extends TestCase
         $this->itemXmls = simplexml_load_string(file_get_contents("https://das-a.ch/feed/mp3"))->channel->item;
     }
 
+    public function testDurationExtractionAndConversion() {
+        $item = $this->itemXmls[165]; // duration should be: 2:07:52 || 7672
+        $result = new PHPPodLib\PodcastEpisode($item, $this->debug);
+        $duration_sec = ($result->getDuration(true));
+        $duration = ($result->getDuration(false));
+        $this->assertTrue(is_numeric($duration_sec) && $duration_sec > 0 && strlen($duration) > 2 && substr_count($duration, ":") > 1);
+    }
+
     // Construction ------------------------------------------
     public function testItemConstruction() {
         $item = $this->itemXmls[random_int(0,count($this->itemXmls)-1)];
@@ -24,14 +32,6 @@ final class PodLibEpisode_test extends TestCase
         $item = $this->itemXmls[random_int(0,count($this->itemXmls)-1)];
         $result = new PHPPodLib\PodcastEpisode($item, $this->debug);
         $this->assertGreaterThan(1, count($result->getChapters()));
-    }
-
-    public function testDurationExtractionAndConversion() {
-        $item = $this->itemXmls[random_int(0,count($this->itemXmls)-1)];
-        $result = new PHPPodLib\PodcastEpisode($item, $this->debug);
-        $duration_sec = $result->getDuration(true);
-        $duration = $result->getDuration(false);
-        $this->assertTrue($duration_sec > 0 && strlen($duration) > 2);
     }
 
     public function testEpisodeCoverExtraction() {
@@ -47,7 +47,7 @@ final class PodLibEpisode_test extends TestCase
     }
 
     public function testTagExtraction() {
-        $item = $this->itemXmls[random_int(0,count($this->itemXmls)-1)];
+        $item = $this->itemXmls[count($this->itemXmls)-1];
         $result = new PHPPodLib\PodcastEpisode($item, $this->debug);
         $this->assertGreaterThan(1, count($result->getKeywords()));
     }

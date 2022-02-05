@@ -52,7 +52,7 @@ class PodcastDBWrapper {
             "last_updated" => ["DATETIME", "NOT NULL"],
             "shownotes" => ["TEXT", "NOT NULL"],
             "summary" => ["TEXT", "NOT NULL"],
-            "duration" => ["VARCHAR(100)", "NOT NULL"]
+            "duration" => ["INT", "NOT NULL"]
             // "PRIMARY KEY (<id>)"
         ),
         "tags" => array(
@@ -116,14 +116,16 @@ class PodcastDBWrapper {
         if ($atLeastUsedNTimes > 0) $result = $this->database->query("select count(tagid) as usage,* from tags2episodes left join tags on (tags.rowid=tagid) group by (tagid) having usage > ".$atLeastUsedNTimes." order by lower(tag) ASC");
         return array_column($result->fetchAll(), "tag");
     }
-    public function getMostCommonTags() { 
-        $result = $this->database->query("select count(tagid) as usage,* from tags2episodes left join tags on (tags.rowid=tagid) group by (tagid) order by usage DESC");
+    public function getMostCommonTags(int $limit = 25) { 
+        $result = $this->database->query("select count(tagid) as usage,* from tags2episodes left join tags on (tags.rowid=tagid) group by (tagid) order by usage DESC ". ($limit > 0 ? "LIMIT 0, ".$limit : ""));
         return array_column($result->fetchAll(), "tag");
     }
     public function orderByUsageOfTags($tags) {
+        #dump($tags);
         $select = "select count(tagid) as usage,* from tags2episodes left join tags on (tags.rowid=tagid) ";
         $order = " group by (tagid) ORDER by usage DESC";
-        $or = " WHERE tag LIKE \"".implode ("\" OR tag LIKE \"", $tags)."\"";
+        $or = " WHERE upper(tag) = upper(\"".implode ("\") OR upper(tag) = upper(\"", $tags)."\")";
+        #die($select.$or.$order);
         $result = $this->database->query($select.$or.$order);
         return array_column($result->fetchAll(), "tag");
      }
@@ -170,7 +172,7 @@ class PodcastDBWrapper {
     public function getEpisodesMatchingTags(array $tags) {
         $where = array();
         foreach ($tags as $tag):
-            $where[] = 'tag LIKE "'.addslashes($tag).'"';
+            $where[] = 'upper(tag) = upper("'.addslashes($tag).'")';
         endforeach;
         $where = implode(" OR ", $where);
         $query = "SELECT episodes.guid as guid, episodes.link as eplink, number as epnumber, season as epseason, episodes.cover as epcover, podcasts.cover as podcover, episodes.pubdate as epdate, duration as tags  FROM tags2episodes LEFT JOIN episodes on (episodeguid=episodes.guid) LEFT JOIN podcasts on (tags2episodes.podcastid = podcasts.rowid) LEFT JOIN TAGS on (tagid=tags.rowid) WHERE ".$where. " GROUP BY (episodes.guid)";
@@ -197,11 +199,11 @@ class PodcastDBWrapper {
                 if (isset($andArray["OR"])):
                     $or = array();
                     foreach ($andArray["OR"] as $orArray):
-                        $or[] = " ".array_keys($orArray)[0]." like \"".array_values($orArray)[0]."\" "; 
+                        $or[] = " upper(".array_keys($orArray)[0].") = upper(\"".array_values($orArray)[0]."\") "; 
                     endforeach;
                     $and[] = implode( " OR ", $or);
                 else:
-                    $and[] = "$aaKey like \"$andArray\"";
+                    $and[] = "upper($aaKey) = upper(\"$andArray\")";
                 endif;
             endforeach;
         endif;
@@ -293,7 +295,7 @@ class PodcastDBWrapper {
                 "summary" => $episode->getSummary() ?  $episode->getSummary() : "",
                 "last_updated" => $now->format('Y-m-d H:i:s'),
                 "shownotes" => $episode->getContent() ?  $episode->getContent() : "",
-                "duration" => $episode->getDuration(true) ? $episode->getDuration(true) : 0
+                "duration" => $episode->getDuration(true) ? ($episode->getDuration(true)) : 0
             ];
            
             try {
@@ -310,8 +312,11 @@ class PodcastDBWrapper {
             $episodeId = $this->database->id();
             $link = $episode->getLink();
             $tags = $episode->getTags();
+
+            // NO TAGS? 
+            // Case 1: for anchor feeds, look for hastags in shownotes
             if (empty($tags) && strpos($link, "anchor.fm") > 0): // still empty? look in the shownotes!
-                $include_pattern = "!#([a-zA-Z0-9-_]+)[^\w]+!i";
+                $include_pattern = "!#([a-zA-Z0-9-_üÜöÖäÄß]+)[^\w]+!i";
                 $exclude_pattern = "!#([0-9A-F]{3}){1,2}!i";
                 if (preg_match_all($include_pattern, strip_tags($episode->getContent()), $out)):
                     $tags = array_map("trim", $out[1]);
@@ -326,8 +331,10 @@ class PodcastDBWrapper {
                         $tags[$idx] = ucwords(str_replace("_", " ", $tag));
                     endforeach;
                 endif;
-                
             endif;
+
+            // NO TAGS? 
+            // Case 2: look for <meta keywords> on mentioned website
             if (empty($tags)): // no tags in feed? look in the website mentioned
                 if (!empty($link)):
                     try {
@@ -342,13 +349,55 @@ class PodcastDBWrapper {
                     }
                 endif; // check website for tags
             endif;
+            
+            // NO TAGS? 
+            // Case 3: look for <a rel="tag"> on mentioned website
+            if (empty($tags)): // no tags in feed or website – look for rel="tag" on website
+                if (!empty($link)):
+                    try {
+                        if (empty($contents)) $contents = @file_get_contents($link);
+                        if (empty($contents)) throw new Exception('Site not reachable/found.');
+                        $pattern = "!<a[^>]*rel=[\"']+tag[\"']+[^>]*>([^<]*)</a>+!isU";
+                        if (preg_match_all($pattern, $contents, $out)):
+                            $tags = array_map("trim", $out[1]);
+                        endif;
+                   } catch (\Exception $e) {
+                        $tags = [];
+                    }
+                endif; // check website for tags
+            endif;
+
+            // No Tags? Look for Podbean Tag widget
+            if (empty($tags) && strpos($link, "podbean.com") > 0):
+                if (!empty($link)):
+                    try {
+                        $contents = @file_get_contents($link);
+                        if (empty($contents)) throw new Exception('Site not reachable/found.');
+                        $pattern = "!<a[^>]*href=[\"']+/category/[^\"^']*[\"']+[^>]*>([^<]*)</a>+!isU";
+                        if (preg_match_all($pattern, $contents, $out)):
+                            $tags = array_map("trim", $out[1]);
+                        endif;
+                   } catch (\Exception $e) {
+                        $tags = [];
+                    }
+                endif; // check website for tags
+            endif;
+
+            // Website tags sometimes don't fit, so we need to remap some of them
             if (!empty($tags)): // there are tags in the feed
+                $i = 0;
                 foreach ($tags as $tag):
-                    if (file_exists($remapTagMdFile)) $tag = $this->remapTags($tag, $remapTagMdFile); 
+                    $tag = trim($tag);
+                    if (empty($tag)) continue;
+                    if (file_exists($remapTagMdFile)): 
+                        $tag = $this->remapTags($tag, $remapTagMdFile);
+                    endif; 
                     if (empty(trim($tag))) continue;
-                    $result = $this->database->select("tags", "rowid", ["tag[~]" => strtolower($tag)]);
-                    if (count($result) > 0):
-                        $tagId = $result["0"];
+                    #$result = $this->database->select("tags", "rowid", ["lower(tag)" => strtolower($tag)]);
+                    $query = "SELECT rowid FROM tags where lower(tag) = \"".mb_strtolower($tag)."\"";
+                    $result = $this->query($query); 
+                    if (!empty($result) && count($result) > 0):
+                        $tagId = $result["0"]["rowid"];
                     else:
                         $this->database->insert("tags", [
                             "tag" => ucwords($tag)
@@ -380,7 +429,7 @@ class PodcastDBWrapper {
                 if (isset($tm["casesensitive"]) && $tm["casesensitive"] == true):
                     $match = $tag == $tm["tag"];
                 else:
-                    $match = strtolower($tag) == strtolower($tm["tag"]);
+                    $match = mb_strtolower($tag) == mb_strtolower($tm["tag"]);
                 endif;
                 if ($match === true) return $tm["replace"];
             endforeach;
@@ -407,7 +456,6 @@ class PodcastDBWrapper {
         }
         return false;
     }
-
 
     public function insertOrUpdatePodcast(PodcastFeed $podcast, array $additionalFields = []) {
         $berlin = new DateTimeZone("Europe/Berlin");
@@ -541,7 +589,7 @@ class PodcastDBWrapper {
         // Remove duplicate -
         $text = preg_replace('~-+~', '-', $text);
         // Lowercase
-        $text = strtolower($text);
+        $text = mb_strtolower($text);
         // Check if it is empty
         if (empty($text)) { return 'n-a'; }
         // Return result

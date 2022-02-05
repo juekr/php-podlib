@@ -14,7 +14,7 @@ namespace PHPPodLib;
 use Exception;
 use \ForceUTF8\Encoding;
 
-require_once('./vendor/autoload.php');
+require_once(__DIR__.'/../../../../autoload.php');
 
 
 class PodcastFeed {
