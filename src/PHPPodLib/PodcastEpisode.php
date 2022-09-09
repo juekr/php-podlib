@@ -6,8 +6,6 @@
 
 namespace PHPPodLib;
 
-require_once(__DIR__.'/../../../../autoload.php');
-
 class PodcastEpisode {
     private $xmlItem;
     private $itemHash;
@@ -346,46 +344,143 @@ class PodcastEpisode {
             return $contentPieces[count($contentPieces)-1];
         endif;
     }
-    
-    public function getPlayer(array $podcast = array("feed" => "", "link" => "", "name" => "", "subtitle" => "", "summary" => "", "cover" => ""), $type = 'podlove', $color = [
-							    "brand" => "#E64415",
-							    "brandDark" => "#235973",
-							    "brandDarkest" => "#000",
-							    "brandLightest" => "#DDCFB4",
-							    "shadeDark" => "#888",
-							    "shadeBase" => "#444",
-							    "contrast" => "#111",
-							    "alt" => "#FFF"
-							] , $size = "l", $subscribe = true) {
-        if (empty($podcast["feed"])) return "";
-		$enclosure = $this->getEnclosure();
 
-		if ($type == 'podigee' && substr_count($this->original_feed_url, '.podigee.io')) {
-			$base = substr($this->original_feed_url, 0, strpos($this->original_feed_url, '.podigee.io')+11);
-			$et = strtolower($this->getEpisodeType());
-			if ($et == 'full') $et = ""; else $et = substr($et,0,1);
-			$script = '<script class="podigee-podcast-player ppplayer" src="https://cdn.podigee.com/podcast-player/javascripts/podigee-podcast-player.js" data-configuration="'.$base.'/'.$et.$this->getEpisodeNumber().'-latest/embed?context=external"></script>';
-			return $script;
-		} else {
-			$chapterstring = "";
-			$chapters = $this->getChapters();
-            if ($chapters != false && count($chapters) > 0) {
-				$charr = array();
-				foreach ($chapters as $key => $c) {
-					$temp = array();
-                    $start = "";
-					if (isset($c["start"]) && $c['start'] != "") { $temp[] = '"start" : "'.$c['start'].'"'; $start = $c["start"]; }
-                    if (strpos($key, ":") > 0) { $temp[] = '"start" : "'.$key.'"'; $start = $key; }
-					if (isset($c["title"]) && $c['title'] != "") $temp[] = '"title" : "'.addslashes($c['title']).'"'; else $temp[] = '"title": "'.addslashes($c).'"';;
-					if (isset($c['href']) && $c['href'] != "") $temp[] = '"href" : "'.$c['href'].'"';
-					if (isset($c['image']) && $c['image'] != "") $temp[] = '"image" : "'.$c['image'].'"'; 
-					$charr[$start] = implode(", ", $temp);
-				}
-				$chapterstring = ", \"chapters\": [ {";
-				$chapterstring .= implode("} , \n		{", $charr);
-				$chapterstring .= "} ]";
-            }
-            // We could read chapters from the mp3 files ... but that's way to resourceful
+    public function getSlimPodlovePlayer(PodcastFeed $p, array $colors = []) {
+        $player = '
+        <div id="podlove-player-slim">
+            <root style="border-radius: 0px 0px 40px 0px; width: 100%; min-width: 320px; max-width: 440px; overflow: hidden; max-height: 80px;" class="pproot grid grid-rows-2 grid-flow-col gap-2 pt-1 pe-0 me-0">
+                <div class="row-span-2 p-2col-span-1 content-start ">
+                    <poster class="w-16 h-16 pl-1"></poster>
+                </div>
+                <div class="row-span-1 p-2 col-span-2 content-start pt-1 ">
+                    <play-button variant="simple"></play-button>
+                </div>
+                <div class="row-span-1 col-span-8 content-center pt-0">
+                    <progress-bar class="place-self-start"></progress-bar>
+                </div>
+                <div class="row-span-1 p-2 col-span-6 gap-1 content-start pt-1 mt-0">
+                    <episode-title></episode-title>
+                    <episode-subtitle></episode-subtitle>
+                </div>
+            </root>
+        </div>';
+        $podcastName = $p->getTitle();
+        $podcastSubtitle = $p->getSubtitle();
+        $podcastSummary = $p->intelligentGetContent("l", true, true);
+        $podcastCover = $p->getCover();
+        $podcastFeed = $p->getFeedURL();
+        $subscribe = true;
+        $chapterstring = $this->chapters2string();
+        $enclosure = $this->getMedia();
+        $podcastLink = $p->getLink();
+        $player .= '<script type="text/javascript">podlovePlayer("#podlove-player-slim", {
+            "version": 5,
+            "activeTab": "chapters",
+            "show": {
+                "title": "'.$podcastName.'",
+                "subtitle": "'.$podcastSubtitle.'",
+                "summary": '.json_encode($podcastSummary).',
+                "poster": "'.($podcastCover ? $podcastCover : '').'",
+                "link": "'.$podcastLink.'", '.
+                // "link": "https://'.$_SERVER['HTTP_HOST'].dirname($_SERVER['PHP_SELF']).'"
+                '
+            },
+            "subscribe-button": '.($subscribe ? '{ feed: "'.$podcastFeed.'",
+            clients: [
+                {
+                    id: "google-podcasts",
+                    service: "'.$podcastFeed.'" // feed
+                },
+                {
+                    id: "pocket-casts",
+                    service: "'.$podcastFeed.'" // feed
+                },
+                {
+                    id: "podcast-addict"
+                },
+                {
+                    id: "podcat"
+                },
+                {
+                    id: "rss",
+                    service: "'.$podcastFeed.'"
+                }
+                ]
+            }':'false') .'
+            ,
+            "title": '.json_encode($this->getTitle()).',
+            "subtitle": "'.$this->intelligentGetContent("s", true, true).'",
+            "summary": '.json_encode($this->intelligentGetContent()).',
+            "publicationDate": "'.$this->getPubDate().'",
+            "poster": "'.($this->getImage() ? $this->getImage() : $podcastCover).'",
+            "duration": "'.$this->getDuration().'",
+            "link": "'.$this->getLink().'",
+            "audio": [
+                {
+                "url": "'.(isset($enclosure['url']) ? ($enclosure['url']) : '""').'",
+                "size": '.(isset($enclosure['length']) ? ($enclosure['length']) : '0').',
+                "title": "'.(isset($enclosure['url']) ? substr(pathinfo($enclosure['url'])['extension'],0,strpos(pathinfo($enclosure['url'])['extension'], '?')) : '""').'",
+                "mimeType": "'.(isset($enclosure['type']) ? ($enclosure['type']) : '""').'"
+                }
+            ]'.
+            $chapterstring.',
+            "runtime": {
+                "locale": "de-De",
+                "language": "de"
+            },'.
+            '"visibleComponents": [
+                "tabInfo",
+                "tabChapters",
+                "tabDownload",
+                "tabAudio",
+                "tabShare",
+                "poster",
+                "showTitle",
+                "episodeTitle",
+                "subtitle",
+                "progressbar",
+                "subscribe",
+                "controlSteppers",
+                "controlChapters"
+            ]}, {
+                "version": 5,
+                "theme": {
+                    "tokens": {
+                    "brand": "'.(isset($color['brand']) ? $color['brand'] : '#E64415').'",
+                    "brandDark": "'.(isset($color['brandDark']) ? $color['brandDark'] : '#235973').'",
+                    "brandDarkest": "'.(isset($color['brandDarkest']) ? $color['brandDarkest'] : '#000').'",
+                    "brandLightest": "'.(isset($color['brandLightest']) ? $color['brandLightest'] : '#DDCFB4').'",
+                    "shadeDark": "'.(isset($color['shadeDark']) ? $color['shadeDark'] : '#888').'",
+                    "shadeBase": "'.(isset($color['shadeBase']) ? $color['shadeBase'] : '#444').'",
+                    "contrast": "'.(isset($color['contrast']) ? $color['contrast'] : '#111').'",
+                    "alt": "'.(isset($color['alt']) ? $color['alt'] : '#FFF').'"
+                    }
+                },
+            })</script>';
+
+            return $player;
+    }
+
+    private function chapters2string(array $chapters = null) {
+        if (is_null($chapters)) $chapters = $this->getChapters();
+        if (empty($chapters)) return "";
+        $charr = array();
+        foreach ($chapters as $key => $c) {
+            $temp = array();
+            $start = "";
+            if (isset($c["start"]) && $c['start'] != "") { $temp[] = '"start" : "'.$c['start'].'"'; $start = $c["start"]; }
+            if (strpos($key, ":") > 0) { $temp[] = '"start" : "'.$key.'"'; $start = $key; }
+            if (isset($c["title"]) && $c['title'] != "") $temp[] = '"title" : "'.addslashes($c['title']).'"'; else $temp[] = '"title": "'.addslashes($c).'"';;
+            if (isset($c['href']) && $c['href'] != "") $temp[] = '"href" : "'.$c['href'].'"';
+            if (isset($c['image']) && $c['image'] != "") $temp[] = '"image" : "'.$c['image'].'"'; 
+            $charr[$start] = implode(", ", $temp);
+        }
+        $chapterstring = ", \"chapters\": [ {";
+        $chapterstring .= implode("} , \n		{", $charr);
+        $chapterstring .= "} ]";
+        return $chapterstring;
+
+        // We could read chapters from the mp3 files ... but that's way to resourceful
 			// } else {
 			// 	require_once($this->id3HelperPath."getid3.php");
 			// 	$getID3 = new \getID3();
@@ -414,8 +509,31 @@ class PodcastEpisode {
 
 			// 	endif;
 			// }
-			
-			if (!(is_array($color))) $color = null;
+    }
+
+    public function getPlayer(array $podcast = array("feed" => "", "link" => "", "name" => "", "subtitle" => "", "summary" => "", "cover" => ""), $type = 'podlove', $color = [
+							    "brand" => "#E64415",
+							    "brandDark" => "#235973",
+							    "brandDarkest" => "#000",
+							    "brandLightest" => "#DDCFB4",
+							    "shadeDark" => "#888",
+							    "shadeBase" => "#444",
+							    "contrast" => "#111",
+							    "alt" => "#FFF"
+							] , $size = "l", $subscribe = true) {
+        if (empty($podcast["feed"])) return "";
+		$enclosure = $this->getEnclosure();
+
+		if ($type == 'podigee' && substr_count($this->original_feed_url, '.podigee.io')) {
+			$base = substr($this->original_feed_url, 0, strpos($this->original_feed_url, '.podigee.io')+11);
+			$et = strtolower($this->getEpisodeType());
+			if ($et == 'full') $et = ""; else $et = substr($et,0,1);
+			$script = '<script class="podigee-podcast-player ppplayer" src="https://cdn.podigee.com/podcast-player/javascripts/podigee-podcast-player.js" data-configuration="'.$base.'/'.$et.$this->getEpisodeNumber().'-latest/embed?context=external"></script>';
+			return $script;
+		} else {
+			$chapterstring = $this->chapters2string();
+            
+            if (!(is_array($color))) $color = null;
 
 			if ($size == "xs") {
 				$player = '<div id="pom-podlove-player-'.$size.'"><root style="align-items: center;" class="p-4 flex justify-center">'.
