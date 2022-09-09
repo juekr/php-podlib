@@ -693,15 +693,17 @@ public function getFilteredEpisodes(string $matchtype = null, string $field = nu
             Preparation: sort by length, filter out duplicates and empties, remove tags if necessary and reindexes the array
         */
         $contentPieces = array(
-            $this->getSubtitle(),
-            $this->getSummary(),
-            $this->getDescription()
+            empty($this->getSubtitle()) ? "" : $this->getSubtitle(),
+            empty($this->getSummary()) ? "" : $this->getSummary(),
+            empty($this->getDescription()) ? "" : $this->getDescription()
         );
         // Only keep uniques
         $contentPieces = array_unique($contentPieces);
         // Sort by string length
         usort($contentPieces, function($a, $b){
-            return strlen($a) > strlen($b);
+            if (strlen($a) > strlen($b)) return 1;
+            if (strlen($a) == strlen($b)) return 0;
+            return -1;
          });
          // Strip html
         if ($stripHtml === true) array_map("trim", array_map("strip_tags", $contentPieces));
