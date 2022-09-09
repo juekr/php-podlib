@@ -347,7 +347,16 @@ class PodcastEpisode {
         endif;
     }
     
-    public function getPlayer(array $podcast = array("feed" => "", "link" => "", "name" => "", "subtitle" => "", "summary" => "", "cover" => ""), $type = 'podlove', $color = '#343A40', $size = "l", $subscribe = true) {
+    public function getPlayer(array $podcast = array("feed" => "", "link" => "", "name" => "", "subtitle" => "", "summary" => "", "cover" => ""), $type = 'podlove', $color = [
+							    "brand" => "#E64415",
+							    "brandDark" => "#235973",
+							    "brandDarkest" => "#000",
+							    "brandLightest" => "#DDCFB4",
+							    "shadeDark" => "#888",
+							    "shadeBase" => "#444",
+							    "contrast" => "#111",
+							    "alt" => "#FFF"
+							] , $size = "l", $subscribe = true) {
         if (empty($podcast["feed"])) return "";
 		$enclosure = $this->getEnclosure();
 
