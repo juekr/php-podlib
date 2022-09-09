@@ -355,7 +355,8 @@ class PodcastFeed {
     // Even more advanced getter functions ========================
     public function getLatestEpisode() {
         if (is_array($this->episodes) && count($this->episodes) > 0):
-            return $this->episodes[count($this->episodes)-1];
+            /* return $this->episodes[count($this->episodes)-1]; // <- this would be the oldest episode */
+	    return $this->episodes[0];
         else:
             return null;
         endif;
