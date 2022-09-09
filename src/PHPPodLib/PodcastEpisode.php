@@ -312,16 +312,18 @@ class PodcastEpisode {
             Preparation: sort by length, filter out duplicates and empties, remove tags if necessary and reindexes the array
         */
         $contentPieces = array(
-            $this->getSubtitle(),
-            $this->getSummary(),
-            $this->getDescription(),
-            $this->getShownotes()
+            empty($this->getSubtitle()) ? "" : $this->getSubtitle(),
+            empty($this->getSummary()) ? "" : $this->getSummary(),
+            empty($this->getDescription()) ? "" : $this->getDescription(),
+            empty($this->getShownotes()) ? "" : $this->getShownotes()
         );
         // Only keep uniques
         $contentPieces = array_unique($contentPieces);
         // Sort by string length
         usort($contentPieces, function($a, $b){
-            return strlen($a) > strlen($b);
+            if (strlen($a) > strlen($b)) return 1;
+            if (strlen($a) == strlen($b)) return 0;
+            return -1;
          });
          // Strip html
         if ($stripHtml === true) array_map("trim", array_map("strip_tags", $contentPieces));
@@ -345,7 +347,7 @@ class PodcastEpisode {
         endif;
     }
 
-    public function getSlimPodlovePlayer(PodcastFeed $p, array $color = []) {
+    public function getSlimPodlovePlayer(PodcastFeed $p, array $colors = []) {
         $player = '
         <div id="podlove-player-slim">
             <root style="border-radius: 0px 0px 40px 0px; width: 100%; min-width: 320px; max-width: 440px; overflow: hidden; max-height: 80px;" class="pproot grid grid-rows-2 grid-flow-col gap-2 pt-1 pe-0 me-0">
