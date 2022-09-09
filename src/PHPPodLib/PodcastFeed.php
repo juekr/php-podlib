@@ -14,9 +14,6 @@ namespace PHPPodLib;
 use Exception;
 use \ForceUTF8\Encoding;
 
-require_once(__DIR__.'/../../../../autoload.php');
-
-
 class PodcastFeed {
     private $feedUrl = "";
     private $feedXML;
@@ -503,7 +500,7 @@ public function getFilteredEpisodes(string $matchtype = null, string $field = nu
                    # echo "count: ".$this->feedXML->channel->item->count()."\n";
                     foreach ($this->feedXML->channel->item as $item):
                        # echo $item->guid."\n";continue;
-                        $episode = new PodcastEpisode($item, true);
+                        $episode = new PodcastEpisode($item, $this->debug);
                         $this->episodes[] = $episode; 
                     endforeach;
                 endif;
@@ -681,6 +678,52 @@ public function getFilteredEpisodes(string $matchtype = null, string $field = nu
 		if ($roundTo > -1) return round($avgdate, $roundTo);
 		return $avgdate;
 	}
+
+    public function intelligentGetContent(string $length = "l", bool $stripHtml = true, bool $reduceLineBreaks = true) {
+        /*  
+            !EXPERIMENTAL!
+            The problem is: there are at least 4 different content fields (<content:encoded>, <summary>, <description>, <subtitle>) with varying length, presence of html tags and so on. 
+            
+            We try to figure out the user's intent and the content piece in the format that fits best
+            Parameters:
+              - length: s|sm, m|md, l|lg|xl
+              - reduceLineBreaks: reduce multiple \n to a single \n
+              - stripHtml: remove all HTML tags
+
+            Preparation: sort by length, filter out duplicates and empties, remove tags if necessary and reindexes the array
+        */
+        $contentPieces = array(
+            $this->getSubtitle(),
+            $this->getSummary(),
+            $this->getDescription()
+        );
+        // Only keep uniques
+        $contentPieces = array_unique($contentPieces);
+        // Sort by string length
+        usort($contentPieces, function($a, $b){
+            return strlen($a) > strlen($b);
+         });
+         // Strip html
+        if ($stripHtml === true) array_map("trim", array_map("strip_tags", $contentPieces));
+        // Remove empties and double line breaks
+        foreach ($contentPieces as $i => $piece): 
+            if (empty($piece)): 
+                unset($contentPieces[$i]);
+                continue;
+            endif;
+            if ($reduceLineBreaks) $contentPieces[$i] = preg_replace("/(\n{2,})/ius", "\n", $piece);
+        endforeach;
+        // Reindex
+        $contentPieces = array_values($contentPieces);
+        // return 0th, 1st, or last content piece item
+        if (strtolower(substr($length, 0, 1)) == "s"):
+            return $contentPieces[0];
+        elseif (strtolower(substr($length, 0, 1)) == "m"):
+            return count($contentPieces) > 2 ? $contentPieces[1] : $contentPieces[count($contentPieces)-1];
+        else:
+            return $contentPieces[count($contentPieces)-1];
+        endif;
+    }
 
 }
 

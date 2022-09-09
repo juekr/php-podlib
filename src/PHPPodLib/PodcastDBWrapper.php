@@ -6,8 +6,6 @@ use \DateTimeZone;
 use Exception;
 use \Spatie\YamlFrontMatter\YamlFrontMatter;
 
-require_once(__DIR__.'/../../../../autoload.php');
-
 class PodcastDBWrapper {
     private $tableDefinitions = array(
         "podcasts" => array(
