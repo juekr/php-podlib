@@ -324,7 +324,7 @@ class PodcastEpisode {
             return strlen($a) > strlen($b);
          });
          // Strip html
-        if ($stripHtml === true) array_map("trim", array_map("strip_tags", $contentPieces));
+        if ($stripHtml === true) $$contentPieces = array_map("trim", array_map("strip_tags", $contentPieces));
         // Remove empties and double line breaks
         foreach ($contentPieces as $i => $piece): 
             if (empty($piece)): 
