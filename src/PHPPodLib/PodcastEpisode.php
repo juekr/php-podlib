@@ -347,7 +347,7 @@ class PodcastEpisode {
         endif;
     }
 
-    public function getSlimPodlovePlayer(PodcastFeed $p, array $colors = []) {
+    public function getSlimPodlovePlayer(PodcastFeed $p, array $color = []) {
         $player = '
         <div id="podlove-player-slim">
             <root style="border-radius: 0px 0px 40px 0px; width: 100%; min-width: 320px; max-width: 440px; overflow: hidden; max-height: 80px;" class="pproot grid grid-rows-2 grid-flow-col gap-2 pt-1 pe-0 me-0">
