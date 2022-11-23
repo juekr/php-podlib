@@ -383,7 +383,7 @@ class PodcastEpisode {
             "activeTab": "chapters",
             "show": {
                 "title": "'.$podcastName.'",
-                "subtitle": "'.json_encode(strip_tags($podcastSubtitle)).'",
+                "subtitle": '.json_encode(strip_tags($podcastSubtitle)).',
                 "summary": '.json_encode($podcastSummary).',
                 "poster": "'.($podcastCover ? $podcastCover : '').'",
                 "link": "'.$podcastLink.'", '.
@@ -414,8 +414,8 @@ class PodcastEpisode {
             }':'false') .'
             ,
             "title": '.json_encode($this->getTitle()).',
-            "subtitle": "'.addslashes(trim(json_encode($this->intelligentGetContent("s", true, true)))).'",
-            "summary": "'.json_encode($this->intelligentGetContent()).'",
+            "subtitle": '.json_encode($this->intelligentGetContent("s", true, true)).',
+            "summary": '.json_encode($this->intelligentGetContent()).',
             "publicationDate": "'.$this->getPubDate().'",
             "poster": "'.($this->getImage() ? $this->getImage() : $podcastCover).'",
             "duration": "'.$this->getDuration().'",
