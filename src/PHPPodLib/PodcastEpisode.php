@@ -380,7 +380,7 @@ class PodcastEpisode {
             "activeTab": "chapters",
             "show": {
                 "title": "'.$podcastName.'",
-                "subtitle": "'.$podcastSubtitle.'",
+                "subtitle": "'.strip_tags($podcastSubtitle).'",
                 "summary": '.json_encode($podcastSummary).',
                 "poster": "'.($podcastCover ? $podcastCover : '').'",
                 "link": "'.$podcastLink.'", '.
