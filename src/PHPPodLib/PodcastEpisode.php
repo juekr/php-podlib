@@ -78,7 +78,8 @@ class PodcastEpisode {
     public function getSeason() { return $this->getMeta("season"); }
     public function getLink() { return $this->getMeta("link"); }
 
-    private function getMeta(string $key = null) {
+    private function getMeta(string $key = null) 
+    {
         if ($key === null) return $this->meta;
         if (in_array($key, array_keys($this->meta))) return $this->meta[$key];
         return null;
@@ -317,6 +318,7 @@ class PodcastEpisode {
             empty($this->getDescription()) ? "" : $this->getDescription(),
             empty($this->getShownotes()) ? "" : $this->getShownotes()
         );
+
         // Only keep uniques
         $contentPieces = array_unique($contentPieces);
         // Sort by string length
@@ -326,7 +328,8 @@ class PodcastEpisode {
             return -1;
          });
          // Strip html
-        if ($stripHtml === true) array_map("trim", array_map("strip_tags", $contentPieces));
+        if ($stripHtml === true) $contentPieces = array_map("trim", array_map("strip_tags", $contentPieces));
+        
         // Remove empties and double line breaks
         foreach ($contentPieces as $i => $piece): 
             if (empty($piece)): 
@@ -411,7 +414,7 @@ class PodcastEpisode {
             }':'false') .'
             ,
             "title": '.json_encode($this->getTitle()).',
-            "subtitle": "'.$this->intelligentGetContent("s", true, true).'",
+            "subtitle": "'.trim(json_encode($this->intelligentGetContent("s", true, true))).'",
             "summary": '.json_encode($this->intelligentGetContent()).',
             "publicationDate": "'.$this->getPubDate().'",
             "poster": "'.($this->getImage() ? $this->getImage() : $podcastCover).'",
