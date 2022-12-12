@@ -19,7 +19,7 @@ class PodcastFeed {
     private $feedXML;
     private $feedHash;
     private $isValidFeed;
-    private $debug;
+    private $debug = false;
     private $episodes;
     private $meta = array (
             "stylesheet" => null,
@@ -448,7 +448,7 @@ public function getFilteredEpisodes(string $matchtype = null, string $field = nu
     
     // Setter functions =========================================
     public function setFeed(string $feed) {
-        // The feed can and should be set a) while class construction or via this function – only after setting the feed, tha class has a unique identifier
+        // The feed can and should be set a) while class construction or via this function – only after setting the feed, that class has a unique identifier
         $this->feedUrl = $feed; 
         $this->isValidFeed = $this->isValidUrl($feed);
         return $this->isValidFeed;
