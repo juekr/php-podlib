@@ -561,8 +561,8 @@ class PodcastEpisode {
                 "version": 5,
                 "activeTab": "chapters",
                 "show": {
-                    "title": "'.$podcast["name"].'",
-                    "subtitle": "'.$podcast["subtitle"].'",
+                    "title": '.json_encode($podcast["name"]).',
+                    "subtitle": '.json_encode($podcast["subtitle"]).',
                     "summary": '.json_encode($podcast["summary"]).',
                     "poster": "'.($podcast["cover"] ? $podcast["cover"] : '').'",
                     "link": "'.$podcast["link"].'", '.
