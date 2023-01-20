@@ -316,7 +316,8 @@ class PodcastDBWrapper {
             if (empty($tags) && strpos($link, "anchor.fm") > 0): // still empty? look in the shownotes!
                 $include_pattern = "!#([a-zA-Z0-9-_üÜöÖäÄß]+)[^\w]+!i";
                 $exclude_pattern = "!#([0-9A-F]{3}){1,2}!i";
-                if (preg_match_all($include_pattern, strip_tags($episode->getContent()), $out)):
+                $stripped_content = empty($episode->getContent()) ? "" : strip_tags($episode->getContent());
+                if (preg_match_all($include_pattern, $stripped_content, $out)):
                     $tags = array_map("trim", $out[1]);
                     foreach($tags as $idx => $tag):
                         if (preg_match($exclude_pattern, $tag)) unset($tags[$idx]);
