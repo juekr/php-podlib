@@ -7,7 +7,7 @@
 namespace PHPPodLib;
 
 class PodcastEpisode {
-    private $xmlItem;
+    private $xmlItem, $debug;
     private $itemHash;
     private $namespaces;
     private $isValid = false;
