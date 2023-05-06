@@ -16,7 +16,7 @@ use \ForceUTF8\Encoding;
 
 class PodcastFeed {
     private $feedUrl = "";
-    private $feedXML;
+    private $feedXML, $namespaces;
     private $feedHash;
     private $isValidFeed;
     private $debug = false;
