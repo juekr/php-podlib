@@ -7,6 +7,7 @@ use Exception;
 use \Spatie\YamlFrontMatter\YamlFrontMatter;
 
 class PodcastDBWrapper {
+    private $database, $debug;
     private $tableDefinitions = array(
         "podcasts" => array(
             // "id" => ["INTEGER", "PRIMARY_KEY"],   = ROWID
