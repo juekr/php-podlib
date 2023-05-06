@@ -309,7 +309,7 @@ class PodcastFeed {
     public function getOwnerName() { return $this->getMeta("ownername"); }
     public function getOwnerEmail() { return $this->getMeta("owneremail"); }
     public function getCover() { return $this->getMeta("cover"); }
-    public function getTitle() { return $this->getMeta("title"); }
+    public function getTitle() { return str_replace("\"", "", $this->getMeta("title")); }
     public function getName() { return $this->getTitle(); }
 
     public function getPubdate(string $format = "r") { return $this->getDate("pubdate", $format); }
