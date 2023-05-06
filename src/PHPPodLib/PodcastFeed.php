@@ -602,7 +602,7 @@ public function getFilteredEpisodes(string $matchtype = null, string $field = nu
         }
         if ($image == null || $image == "") {
             if (in_array("itunes", array_keys($this->namespaces))):
-                $image = $this->xmlItem->xpath(".//itunes:image");
+                $image = $this->feedXML->xpath(".//itunes:image");
                 if (count($image) > 0):
                     $image = $image[0];
                     if (isset($image->attributes()["href"])):
