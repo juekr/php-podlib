@@ -314,7 +314,7 @@ class PodcastDBWrapper {
 
             // NO TAGS? 
             // Case 1: for anchor feeds, look for hastags in shownotes
-            if (empty($tags) && strpos($link, "anchor.fm") > 0): // still empty? look in the shownotes!
+            if (empty($tags) && strpos($link, "spotify.com") > 0): // still empty? look in the shownotes!
                 $include_pattern = "!#([a-zA-Z0-9-_üÜöÖäÄß]+)[^\w]+!i";
                 $exclude_pattern = "!#([0-9A-F]{3}){1,2}!i";
                 $stripped_content = empty($episode->getContent()) ? "" : strip_tags($episode->getContent());
@@ -335,7 +335,7 @@ class PodcastDBWrapper {
 
             // NO TAGS? 
             // Case 2: look for <meta keywords> on mentioned website
-            if (empty($tags)): // no tags in feed? look in the website mentioned
+            if (empty($tags) && strpos($link, "spotify.com") == false ): // no tags in feed? look in the website mentioned
                 if (!empty($link)):
                     try {
                         $contents = @file_get_contents($link);
