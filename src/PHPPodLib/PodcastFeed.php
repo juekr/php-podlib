@@ -16,10 +16,10 @@ use \ForceUTF8\Encoding;
 
 class PodcastFeed {
     private $feedUrl = "";
-    private $feedXML;
+    private $feedXML, $namespaces;
     private $feedHash;
     private $isValidFeed;
-    private $debug;
+    private $debug = false;
     private $episodes;
     private $meta = array (
             "stylesheet" => null,
@@ -309,7 +309,7 @@ class PodcastFeed {
     public function getOwnerName() { return $this->getMeta("ownername"); }
     public function getOwnerEmail() { return $this->getMeta("owneremail"); }
     public function getCover() { return $this->getMeta("cover"); }
-    public function getTitle() { return $this->getMeta("title"); }
+    public function getTitle() { return str_replace("\"", "", $this->getMeta("title")); }
     public function getName() { return $this->getTitle(); }
 
     public function getPubdate(string $format = "r") { return $this->getDate("pubdate", $format); }
@@ -448,7 +448,7 @@ public function getFilteredEpisodes(string $matchtype = null, string $field = nu
     
     // Setter functions =========================================
     public function setFeed(string $feed) {
-        // The feed can and should be set a) while class construction or via this function – only after setting the feed, tha class has a unique identifier
+        // The feed can and should be set a) while class construction or via this function – only after setting the feed, that class has a unique identifier
         $this->feedUrl = $feed; 
         $this->isValidFeed = $this->isValidUrl($feed);
         return $this->isValidFeed;
@@ -602,7 +602,7 @@ public function getFilteredEpisodes(string $matchtype = null, string $field = nu
         }
         if ($image == null || $image == "") {
             if (in_array("itunes", array_keys($this->namespaces))):
-                $image = $this->xmlItem->xpath(".//itunes:image");
+                $image = $this->feedXML->xpath(".//itunes:image");
                 if (count($image) > 0):
                     $image = $image[0];
                     if (isset($image->attributes()["href"])):
@@ -706,7 +706,7 @@ public function getFilteredEpisodes(string $matchtype = null, string $field = nu
             return -1;
          });
          // Strip html
-        if ($stripHtml === true) array_map("trim", array_map("strip_tags", $contentPieces));
+        if ($stripHtml === true) $contentPieces = array_map("trim", array_map("strip_tags", $contentPieces));
         // Remove empties and double line breaks
         foreach ($contentPieces as $i => $piece): 
             if (empty($piece)): 

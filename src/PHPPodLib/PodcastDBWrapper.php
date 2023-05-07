@@ -7,6 +7,7 @@ use Exception;
 use \Spatie\YamlFrontMatter\YamlFrontMatter;
 
 class PodcastDBWrapper {
+    private $database, $debug;
     private $tableDefinitions = array(
         "podcasts" => array(
             // "id" => ["INTEGER", "PRIMARY_KEY"],   = ROWID
@@ -313,10 +314,11 @@ class PodcastDBWrapper {
 
             // NO TAGS? 
             // Case 1: for anchor feeds, look for hastags in shownotes
-            if (empty($tags) && strpos($link, "anchor.fm") > 0): // still empty? look in the shownotes!
+            if (empty($tags) && strpos($link, "spotify.com") > 0): // still empty? look in the shownotes!
                 $include_pattern = "!#([a-zA-Z0-9-_üÜöÖäÄß]+)[^\w]+!i";
                 $exclude_pattern = "!#([0-9A-F]{3}){1,2}!i";
-                if (preg_match_all($include_pattern, strip_tags($episode->getContent()), $out)):
+                $stripped_content = empty($episode->getContent()) ? "" : strip_tags($episode->getContent());
+                if (preg_match_all($include_pattern, $stripped_content, $out)):
                     $tags = array_map("trim", $out[1]);
                     foreach($tags as $idx => $tag):
                         if (preg_match($exclude_pattern, $tag)) unset($tags[$idx]);
@@ -333,7 +335,7 @@ class PodcastDBWrapper {
 
             // NO TAGS? 
             // Case 2: look for <meta keywords> on mentioned website
-            if (empty($tags)): // no tags in feed? look in the website mentioned
+            if (empty($tags) && strpos($link, "spotify.com") == false ): // no tags in feed? look in the website mentioned
                 if (!empty($link)):
                     try {
                         $contents = @file_get_contents($link);
