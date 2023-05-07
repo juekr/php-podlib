@@ -323,7 +323,6 @@ class PodcastEpisode {
         $contentPieces = array_unique($contentPieces);
         // Sort by string length
         usort($contentPieces, function($a, $b){
-<<<<<<< HEAD
             if (strlen($a) > strlen($b)) return 1;
             if (strlen($a) == strlen($b)) return 0;
             return -1;
@@ -331,14 +330,6 @@ class PodcastEpisode {
          // Strip html
         if ($stripHtml === true) $contentPieces = array_map("trim", array_map("strip_tags", $contentPieces));
         
-=======
-	    if (empty($a)) return $b;
-            if (empty($b)) return $a;
-            return strlen($a) > strlen($b);
-         });
-         // Strip html
-        if ($stripHtml === true) $contentPieces = array_map("trim", array_map(function($item) { return empty($item) ? "" : strip_tags($item); }, $contentPieces));
->>>>>>> 6e3a4b74cfede89e7ea625e09d9b78b3f306b599
         // Remove empties and double line breaks
         foreach ($contentPieces as $i => $piece): 
             if (empty($piece)): 
