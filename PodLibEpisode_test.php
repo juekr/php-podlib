@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
-use PHPUnit\Framework\TestCase;
 require_once('./vendor/autoload.php');
+use PHPUnit\Framework\TestCase;
 
 final class PodLibEpisode_test extends TestCase 
 {
