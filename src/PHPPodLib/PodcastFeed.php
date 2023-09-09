@@ -715,6 +715,7 @@ public function getFilteredEpisodes(string $matchtype = null, string $field = nu
                 continue;
             endif;
             if ($reduceLineBreaks) $contentPieces[$i] = preg_replace("/(\n{2,})/ius", "\n", $piece);
+            $contentPieces[$i] = str_replace("&nbsp;", " ",  $contentPieces[$i]);
         endforeach;
         // Reindex
         $contentPieces = array_values($contentPieces);
