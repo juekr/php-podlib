@@ -12,7 +12,8 @@ final class PodLib_test extends TestCase
         "https://das-a.ch/feed/mp3",
         "https://geschichteeuropas.podigee.io/feed/mp3",
         "https://heldendumm.de/feed/podcast",
-        "https://feed.schwarz-code-gold.de"
+        "https://feed.schwarz-code-gold.de",
+        "https://podcastpastete.de/feed/mp3/"
         ];
     private $validUrlButNotAFeed = "https://das-a.ch";
     private $invalidUrl = "xxx";
@@ -316,6 +317,12 @@ final class PodLib_test extends TestCase
 
     public function testCoverExtraction() {
         $podcast = $this->setupValidFeed();
+        $result = $podcast->getCover();
+        $this->assertNotEmpty($result);
+    }
+
+    public function testCoverExtractionSpecial() {
+        $podcast = $this->setupValidFeed(4);
         $result = $podcast->getCover();
         $this->assertNotEmpty($result);
     }

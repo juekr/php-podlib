@@ -78,7 +78,8 @@ class PodcastEpisode {
     public function getSeason() { return $this->getMeta("season"); }
     public function getLink() { return $this->getMeta("link"); }
 
-    private function getMeta(string $key = null) {
+    private function getMeta(string $key = null) 
+    {
         if ($key === null) return $this->meta;
         if (in_array($key, array_keys($this->meta))) return $this->meta[$key];
         return null;
@@ -312,21 +313,23 @@ class PodcastEpisode {
             Preparation: sort by length, filter out duplicates and empties, remove tags if necessary and reindexes the array
         */
         $contentPieces = array(
-            $this->getSubtitle(),
-            $this->getSummary(),
-            $this->getDescription(),
-            $this->getShownotes()
+            empty($this->getSubtitle()) ? "" : $this->getSubtitle(),
+            empty($this->getSummary()) ? "" : $this->getSummary(),
+            empty($this->getDescription()) ? "" : $this->getDescription(),
+            empty($this->getShownotes()) ? "" : $this->getShownotes()
         );
+
         // Only keep uniques
         $contentPieces = array_unique($contentPieces);
         // Sort by string length
         usort($contentPieces, function($a, $b){
-	    if (empty($a)) return $b;
-            if (empty($b)) return $a;
-            return strlen($a) > strlen($b);
+            if (strlen($a) > strlen($b)) return 1;
+            if (strlen($a) == strlen($b)) return 0;
+            return -1;
          });
          // Strip html
-        if ($stripHtml === true) $contentPieces = array_map("trim", array_map(function($item) { return empty($item) ? "" : strip_tags($item); }, $contentPieces));
+        if ($stripHtml === true) $contentPieces = array_map("trim", array_map("strip_tags", $contentPieces));
+        
         // Remove empties and double line breaks
         foreach ($contentPieces as $i => $piece): 
             if (empty($piece)): 
@@ -347,7 +350,7 @@ class PodcastEpisode {
         endif;
     }
 
-    public function getSlimPodlovePlayer(PodcastFeed $p, array $colors = []) {
+    public function getSlimPodlovePlayer(PodcastFeed $p, array $color = []) {
         $player = '
         <div id="podlove-player-slim">
             <root style="border-radius: 0px 0px 40px 0px; width: 100%; min-width: 320px; max-width: 440px; overflow: hidden; max-height: 80px;" class="pproot grid grid-rows-2 grid-flow-col gap-2 pt-1 pe-0 me-0">
@@ -380,7 +383,7 @@ class PodcastEpisode {
             "activeTab": "chapters",
             "show": {
                 "title": "'.$podcastName.'",
-                "subtitle": "'.$podcastSubtitle.'",
+                "subtitle": '.json_encode(strip_tags($podcastSubtitle)).',
                 "summary": '.json_encode($podcastSummary).',
                 "poster": "'.($podcastCover ? $podcastCover : '').'",
                 "link": "'.$podcastLink.'", '.
@@ -411,7 +414,7 @@ class PodcastEpisode {
             }':'false') .'
             ,
             "title": '.json_encode($this->getTitle()).',
-            "subtitle": "'.$this->intelligentGetContent("s", true, true).'",
+            "subtitle": '.json_encode($this->intelligentGetContent("s", true, true)).',
             "summary": '.json_encode($this->intelligentGetContent()).',
             "publicationDate": "'.$this->getPubDate().'",
             "poster": "'.($this->getImage() ? $this->getImage() : $podcastCover).'",

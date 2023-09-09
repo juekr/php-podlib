@@ -142,14 +142,27 @@ final class PodLibEpisode_test extends TestCase
     // ------------------------------------ Episode matching
 
     // Get differently sized content pieces -------------------
-    public function testIntelligentContentMatching() {
+    public function testIntelligentContentMatchingNullEpisode() {
         $item = $this->itemXmls[count($this->itemXmls)-1];
         $episode = new PHPPodLib\PodcastEpisode($item, $this->debug);
         $l = $episode->intelligentGetContent("l");
         $s = $episode->intelligentGetContent("s");
+        
         $this->assertGreaterThan(
             strlen($s), strlen($l)
         );
+    }
+
+    public function testIntelligentContentMatchingLatestEpisode() {
+        $item = $this->itemXmls[0]; // 
+        $episode = new PHPPodLib\PodcastEpisode($item, $this->debug);
+        $l = $episode->intelligentGetContent("l");
+        $s = $episode->intelligentGetContent("s");
+        
+        $this->assertGreaterThan(
+            strlen($s), strlen($l)
+        );
+        $this->assertFalse(strpos($s, "<div>"));
     }
 
     // ------------------ -Get differently sized content pieces 
