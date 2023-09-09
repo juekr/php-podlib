@@ -277,10 +277,11 @@ class PodcastFeed {
 		Wahre Kriminalfälle";
 
         
-    public function __construct(string $feed = null, bool $debug = false)
+    public function __construct(string $feed = null, bool $debug = false, bool $autoload = false)
     {
         if ($feed != null) $this->setFeed($feed);
         if ($debug === true) $this->debug = true;
+        if ($autoload === true) $this->loadFeedXml($this->download_feed_and_return_xml($feed));
     }
 
     // Standard getter functions =============================
@@ -725,6 +726,35 @@ public function getFilteredEpisodes(string $matchtype = null, string $field = nu
         else:
             return $contentPieces[count($contentPieces)-1];
         endif;
+    }
+
+    public function download_feed_and_return_xml($feed = null) //: string
+    {
+        if (empty($feed)) $feed = $this->feedUrl;
+        $agent = 'Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.0.3705; .NET CLR 1.1.4322)';
+        $agent = 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36';
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $feed);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
+        curl_setopt($ch, CURLOPT_ENCODING, 'gzip, deflate');
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+
+        $headers = array();
+        $headers[] = 'Upgrade-Insecure-Requests: 1';
+        $headers[] = $agent;
+        $headers[] = 'Sec-Ch-Ua: \"Not/A)Brand\";v=\"99\", \"Brave\";v=\"115\", \"Chromium\";v=\"115\"';
+        $headers[] = 'Sec-Ch-Ua-Mobile: ?0';
+        $headers[] = 'Sec-Ch-Ua-Platform: \"macOS\"';
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+
+        $result = curl_exec($ch);
+        if (curl_errno($ch)) {
+            return false;
+        }
+        curl_close($ch);
+        return $result;
     }
 
 }

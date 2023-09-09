@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
-
+require_once('vendor/autoload.php');
 use \PHPUnit\Framework\TestCase;
-require_once('./vendor/autoload.php');
+
 
 final class PodLib_test extends TestCase
 {
@@ -114,16 +114,29 @@ final class PodLib_test extends TestCase
         $this->assertFalse($result);
     } 
 
+    public function testDownloadXmlFunction() {
+        $podcast = $this->setupValidFeed(4);
+        $result = $podcast->download_feed_and_return_xml();
+        $this->assertNotEmpty($result);
+    }
+
+    public function testAutoloadAndDownloadXmlFunction() {
+        $feedUrl = $this->validFeeds[random_int(0, count($this->validFeeds)-1)];
+        $podcast = new \PHPPodLib\PodcastFeed($feedUrl, $this->debug, true);
+        $this->assertNotEmpty($podcast->getTitle());
+    }
+
     public function testLoadingFeedContentWithANonXMLString() {
         $feedUrl = $this->validUrlButNotAFeed;
         $podcast = new \PHPPodLib\PodcastFeed($feedUrl, $this->debug);
-        $result = $podcast->loadFeedXml(file_get_contents($feedUrl));
+        $result = $podcast->loadFeedXml($podcast->download_feed_and_return_xml($feedUrl));
         $this->assertFalse($result);
     }
+
     public function testLoadingFeedContentWithValidXML() {
         $feedUrl = $this->validFeeds[random_int(0, count($this->validFeeds)-1)];
         $podcast = new \PHPPodLib\PodcastFeed($feedUrl, $this->debug);#
-        $result = $podcast->loadFeedXml(file_get_contents($feedUrl));
+        $result = $podcast->loadFeedXml($podcast->download_feed_and_return_xml($feedUrl));
         $this->assertTrue($result);
     }
     // ----------------------------------- Load feed content
@@ -370,7 +383,7 @@ final class PodLib_test extends TestCase
     private function setupValidFeed($key = -1) {
         if ($key == -1 || $key >= count($this->validFeeds)) $feedUrl = $this->validFeeds[random_int(0, count($this->validFeeds)-1)]; else $feedUrl = $this->validFeeds[$key];
         $podcast = new \PHPPodLib\PodcastFeed($feedUrl, $this->debug);
-        $podcast->loadFeedXml(file_get_contents($feedUrl)); 
+        $podcast->loadFeedXml($podcast->download_feed_and_return_xml($feedUrl)); 
         return $podcast;
     }
 }
