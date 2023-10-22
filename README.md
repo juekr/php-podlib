@@ -15,7 +15,7 @@ Currently, you have to initialize the class `$x = new PodcastFeed($feed_address)
 Now there is an autoload-xml functionality – to stay compatible, the parameter has to follow the debug option like this:
 
 ```php
-$podcast = new PodcastFeed($feed, $debug, $autoload);
+$podcast = new PodcastFeed($feed, $debug, $autoload, $from_cache);
 ```
 Note: This is always a hot-load without caching!
 
