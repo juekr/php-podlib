@@ -11,8 +11,12 @@
 
 namespace PHPPodLib;
 
+require_once(__DIR__."/../../vendor/autoload.php");
+
 use Exception;
 use \ForceUTF8\Encoding;
+use Symfony\Component\Cache\Adapter\FilesystemAdapter;
+
 
 class PodcastFeed {
     private $feedUrl = "";
@@ -277,11 +281,17 @@ class PodcastFeed {
 		Wahre Kriminalfälle";
 
         
-    public function __construct(string $feed = null, bool $debug = false, bool $autoload = false)
+    public function __construct(string $feed = null, bool $debug = false, bool $autoload = false, $use_cache = false)
     {
         if ($feed != null) $this->setFeed($feed);
         if ($debug === true) $this->debug = true;
-        if ($autoload === true) $this->loadFeedXml($this->download_feed_and_return_xml($feed));
+        if ($autoload === true): 
+            if ($use_cache):
+                $this->loadFeedXml($this->get_feed_from_cache($feed, false, 60*60*12));
+            else:    
+                $this->loadFeedXml($this->download_feed_and_return_xml($feed));
+            endif;
+        endif;
     }
 
     // Standard getter functions =============================
@@ -757,8 +767,45 @@ public function getFilteredEpisodes(string $matchtype = null, string $field = nu
         return $result;
     }
 
+    function get_feed_from_cache($feedUrl, $forceFresh = false, $cache_retention_time = 60 * 60 * 12) { // 1/2 day
+        $p = new PodcastFeed($feedUrl);
+    
+        // Instantiate the caching adapter
+        $cachePool = new FilesystemAdapter(
+            $namespace = "",
+            $defaultLifetime = 0,
+            $directory = __DIR__."/../../cache"
+        );
+        
+        // Generate a unique cache key based on the image URL
+        $cacheKey = 'feed_' . md5($feedUrl);
+        
+        // clear cache if forced to
+        if ($forceFresh === true) $cachePool->clear();
+        
+        // Try to fetch the image from the cache
+        $cachedItem = $cachePool->getItem($cacheKey);
+        
+        if (!$cachedItem->isHit()):
+            # fetch fresh
+            try {
+                $grabbed = $p->download_feed_and_return_xml($feedUrl);
+            } catch (Exception $e) {
+                die($e);
+            }
+    
+            // Store the image data and MIME type in the cache
+            $cachedItem->set($grabbed);
+            $cachedItem->expiresAfter($cache_retention_time); 
+            $cachePool->save($cachedItem);
+        else:
+            // Extract the image data and MIME type from the cached item
+            $grabbed = $cachedItem->get();
+        endif;
+        
+        #$p->loadFeedXml($grabbed);
+        return $grabbed;
+    }
 }
-
-
 
 ?>

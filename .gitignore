@@ -9,3 +9,4 @@ cache
 cache.*
 cache/*
 dev.php
+cache

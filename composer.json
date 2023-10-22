@@ -4,7 +4,9 @@
         "phpunit/phpunit": "^9"
     },
     "require": {
-        "neitanod/forceutf8": "^2.0"
+        "neitanod/forceutf8": "^2.0",
+        "symfony/polyfill-mbstring": "^1.23",
+        "symfony/cache": "^6.3"
     },
     "autoload": {
         "psr-0": { "PHPPodLib\\": "src/"}

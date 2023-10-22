@@ -21,47 +21,54 @@ Note: This is always a hot-load without caching!
 
 ## Caching helper function (requiring Symfony's cache component)
 
+```bash
+composer require symfony/cache
+```
+
 ```php
 <?php
-require_once __DIR__."/../vendor/autoload.php";
+require_once __DIR__."/../../vendor/autoload.php";
 use Symfony\Component\Cache\Adapter\FilesystemAdapter;
-use Symfony\Contracts\Cache\ItemInterface;
 use PHPPodLib\PodcastFeed;
 
-function get_feed_from_cache($feedUrl, $forceFresh = false) {
-    $p = new PodcastFeed($feedUrl);
-
-	// Instantiate the caching adapter
-	$cachePool = new FilesystemAdapter();
-	
-	// Generate a unique cache key based on the image URL
-	$cacheKey = 'feed_' . md5($feedUrl);
-	
-	// clear cache if forced to
-	if ($forceFresh === true) $cachePool->clear();
-	
-	// Try to fetch the image from the cache
-	$cachedItem = $cachePool->getItem($cacheKey);
-	
-	if (!$cachedItem->isHit()):
-		# fetch fresh
-		try {
-			$grabbed = $p->download_feed_and_return_xml($feedUrl);
-		} catch (Exception $e) {
-			die($e);
-		}
-
-		// Store the image data and MIME type in the cache
-		$cachedItem->set($grabbed);
-		$cachedItem->expiresAfter(60 * 60 * 12); // 1/2 day
-		$cachePool->save($cachedItem);
-	else:
-		// Extract the image data and MIME type from the cached item
-		$grabbed = $cachedItem->get();
-	endif;
+function get_feed_from_cache($feedUrl, $forceFresh = false, $cache_retention_time = 60 * 60 * 12) { // 1/2 day
+        $p = new PodcastFeed($feedUrl);
     
-    $p->loadFeedXml($grabbed);
-	return $p;
-}
+        // Instantiate the caching adapter
+        $cachePool = new FilesystemAdapter(
+            $namespace = "",
+            $defaultLifetime = 0,
+            $directory = __DIR__."/../../cache"
+        );
+        
+        // Generate a unique cache key based on the image URL
+        $cacheKey = 'feed_' . md5($feedUrl);
+        
+        // clear cache if forced to
+        if ($forceFresh === true) $cachePool->clear();
+        
+        // Try to fetch the image from the cache
+        $cachedItem = $cachePool->getItem($cacheKey);
+        
+        if (!$cachedItem->isHit()):
+            # fetch fresh
+            try {
+                $grabbed = $p->download_feed_and_return_xml($feedUrl);
+            } catch (Exception $e) {
+                die($e);
+            }
+    
+            // Store the image data and MIME type in the cache
+            $cachedItem->set($grabbed);
+            $cachedItem->expiresAfter($cache_retention_time); 
+            $cachePool->save($cachedItem);
+        else:
+            // Extract the image data and MIME type from the cached item
+            $grabbed = $cachedItem->get();
+        endif;
+        
+        #$p->loadFeedXml($grabbed);
+        return $grabbed;
+    }
 ?>
 ```
