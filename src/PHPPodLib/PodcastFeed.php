@@ -310,7 +310,7 @@ class PodcastFeed {
     public function getOwnerName() { return $this->getMeta("ownername"); }
     public function getOwnerEmail() { return $this->getMeta("owneremail"); }
     public function getCover() { return $this->getMeta("cover"); }
-    public function getTitle() { return str_replace("\"", "", $this->getMeta("title")); }
+    public function getTitle() { return str_replace("\"", "", empty($this->getMeta("title")) ? "" : $this->getMeta("title")); }
     public function getName() { return $this->getTitle(); }
 
     public function getPubdate(string $format = "r") { return $this->getDate("pubdate", $format); }
@@ -495,9 +495,9 @@ public function getFilteredEpisodes(string $matchtype = null, string $field = nu
         // }
         if ($this->isValidUTF8XML($utf8feedContent)):  
             try {
-                $this->feedXML = simplexml_load_string($utf8feedContent); 
+                $this->feedXML = @simplexml_load_string($utf8feedContent); 
                 $this->episodes = array();
-                if ($this->feedXML->channel->item->count() > 0):
+                if ($this->feedXML && $this->feedXML->channel->item->count() > 0):
                    # echo "count: ".$this->feedXML->channel->item->count()."\n";
                     foreach ($this->feedXML->channel->item as $item):
                        # echo $item->guid."\n";continue;
@@ -513,6 +513,11 @@ public function getFilteredEpisodes(string $matchtype = null, string $field = nu
                 endif;
             } catch (Exception $e) {
                 if ($this->debug) echo "ERROR: error while loading feed xml: ".$e->getMessage()."\n";
+                return false;
+            }
+
+            if (!$this->feedXML) {
+                if ($this->debug) echo "ERROR: feed wasn't loaded.\n";
                 return false;
             }
            
@@ -749,12 +754,14 @@ public function getFilteredEpisodes(string $matchtype = null, string $field = nu
         $headers[] = 'Sec-Ch-Ua-Mobile: ?0';
         $headers[] = 'Sec-Ch-Ua-Platform: \"macOS\"';
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-
+        
         $result = curl_exec($ch);
+        
         if (curl_errno($ch)) {
             return false;
         }
         curl_close($ch);
+        
         return $result;
     }
 
