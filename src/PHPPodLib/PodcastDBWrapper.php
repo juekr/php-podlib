@@ -13,8 +13,8 @@ class PodcastDBWrapper {
             // "id" => ["INTEGER", "PRIMARY_KEY"],   = ROWID
             "feed" => ["TEXT", "NOT NULL"],
             "title" => ["TEXT", "NOT NULL"],
-            "authors" => ["TEXT", "NOT NULL"],
-            "contact" => ["TEXT", "NOT NULL"],
+            "authors" => ["TEXT", "NULL"],
+            "contact" => ["TEXT", "NULL"],
             "categories" => ["VARCHAR(250)", "NOT NULL"],
             "website" => ["TEXT", "NOT NULL"],
             "cover" => ["TEXT", "NOT NULL"],
@@ -249,7 +249,7 @@ class PodcastDBWrapper {
 
         $episodes = $podcast->getEpisodes();
         if (count($episodes) == 0): 
-            if ($this->debug) echo " err: no episodes in feed\n";
+            if ($this->debug) echo " err: no episodes in feed for podcast".$podcast->getFeedURL()."\n";
             return false;
         endif;
 
@@ -306,16 +306,25 @@ class PodcastDBWrapper {
             } catch (Exception $e) {
                 var_dump($values);die($e->getMessage());
             }
-            
+
             // Now on to the tags!
             $episodeId = $this->database->id();
             $link = $episode->getLink();
             $tags = $episode->getTags();
 
-            // NO TAGS? 
-            // Case 1: for anchor feeds, look for hastags in shownotes
-            if (empty($tags) && strpos($link, "spotify.com") > 0): // still empty? look in the shownotes!
-                $include_pattern = "!#([a-zA-Z0-9-_üÜöÖäÄß]+)[^\w]+!i";
+            $report[$episodeId] = array(
+                "episode" => $episode->getTitle(),
+                "link" => $link,
+                "tags" => [],
+                "found in" => []
+            );
+
+            // NO TAGS?
+            // Case 1: ~~for anchor feeds~~, look for hastags in shownotes
+            // if (empty($tags) && strpos($link, "spotify.com") > 0): // still empty? look in the shownotes!
+            if (empty($tags)): // still empty? look in the shownotes!
+                if ($this->debug) echo "[TAGS: #tag1, #tag2]\n";
+                $include_pattern = "!#([a-zA-Z0-9-_üÜöÖäÄß\s^\n]{3,})(?=(?:[#,\n]|\s---\s|$:?)+)!is";
                 $exclude_pattern = "!#([0-9A-F]{3}){1,2}!i";
                 $stripped_content = empty($episode->getContent()) ? "" : strip_tags($episode->getContent());
                 if (preg_match_all($include_pattern, $stripped_content, $out)):
@@ -324,6 +333,7 @@ class PodcastDBWrapper {
                         if (preg_match($exclude_pattern, $tag)) unset($tags[$idx]);
                         $tags[$idx] = ucwords(str_replace("_", " ", $tag));
                     endforeach;
+                # look through shownotes, then description
                 elseif (preg_match_all($include_pattern, strip_tags($episode->getDescription()), $out)):
                     $tags = array_map("trim", $out[1]);
                     foreach($tags as $idx => $tag):
@@ -331,11 +341,35 @@ class PodcastDBWrapper {
                         $tags[$idx] = ucwords(str_replace("_", " ", $tag));
                     endforeach;
                 endif;
+
+                if (!empty($tags)): 
+                    $report[$episodeId]["tags"] += $tags;
+                    $report[$episodeId]["from"][] = "[TAGS: #tag1, #tag2]";
+                endif;
+
+            endif;
+
+            // Still no tags?
+            if (empty($tags) || count($tags) < 3):
+                if ($this->debug) echo "[TAGS: Tags: Tag 1, Tag 2]\n";
+                try {
+                    $pattern = "!Tags:(.*)(?:\n|$:?)!isU";
+                    if (preg_match($pattern, strip_tags($episode->getDescription()), $out)):
+                        $tags = array_map("trim", explode(",", $out[1]));
+                    endif;
+                } catch (\Exception $e) {
+                    $tags = [];
+                }
+                if (!empty($tags)): 
+                    $report[$episodeId]["tags"] += $tags;
+                    $report[$episodeId]["from"][] = "[TAGS: Tags: Tag 1, Tag 2]";
+                endif;
             endif;
 
             // NO TAGS? 
             // Case 2: look for <meta keywords> on mentioned website
             if (empty($tags) && strpos($link, "spotify.com") == false ): // no tags in feed? look in the website mentioned
+                if ($this->debug) echo "[TAGS 2: meta keywords]\n";
                 if (!empty($link)):
                     try {
                         $contents = @file_get_contents($link);
@@ -344,15 +378,20 @@ class PodcastDBWrapper {
                         if (preg_match_all($pattern, $contents, $out)):
                             $tags = array_map("trim", explode(",", $out[1][0]));
                         endif;
-                   } catch (\Exception $e) {
+                    } catch (\Exception $e) {
                         $tags = [];
                     }
                 endif; // check website for tags
+                if (!empty($tags)): 
+                    $report[$episodeId]["tags"] += $tags;
+                    $report[$episodeId]["from"][] = "[TAGS 2: meta keywords]";
+                endif;
             endif;
-            
+
             // NO TAGS? 
             // Case 3: look for <a rel="tag"> on mentioned website
             if (empty($tags)): // no tags in feed or website – look for rel="tag" on website
+                if ($this->debug) echo "[TAGS 3: rel tag]\n";
                 if (!empty($link)):
                     try {
                         if (empty($contents)) $contents = @file_get_contents($link);
@@ -361,14 +400,19 @@ class PodcastDBWrapper {
                         if (preg_match_all($pattern, $contents, $out)):
                             $tags = array_map("trim", $out[1]);
                         endif;
-                   } catch (\Exception $e) {
+                    } catch (\Exception $e) {
                         $tags = [];
                     }
                 endif; // check website for tags
+                if (!empty($tags)): 
+                    $report[$episodeId]["tags"] += $tags;
+                    $report[$episodeId]["from"][] = "[TAGS 2: rel tag on website]";
+                endif;
             endif;
 
             // No Tags? Look for Podbean Tag widget
             if (empty($tags) && strpos($link, "podbean.com") > 0):
+                if ($this->debug) echo "[TAGS 4: podbean tags]\n";
                 if (!empty($link)):
                     try {
                         $contents = @file_get_contents($link);
@@ -381,10 +425,17 @@ class PodcastDBWrapper {
                         $tags = [];
                     }
                 endif; // check website for tags
+                if (!empty($tags)): 
+                    $report[$episodeId]["tags"] += $tags;
+                    $report[$episodeId]["from"][] = "[TAGS: href /w category on website]";
+                endif;
             endif;
+
+            if ($this->debug) echo implode(", ", $tags)."\n";
 
             // Website tags sometimes don't fit, so we need to remap some of them
             if (!empty($tags)): // there are tags in the feed
+                if ($this->debug) echo "[TAGS N: inserting...]\n";
                 $i = 0;
                 foreach ($tags as $tag):
                     $tag = trim($tag);
@@ -417,6 +468,11 @@ class PodcastDBWrapper {
                 endforeach; // tags
             endif; 
         endforeach; // episodes
+
+        if ($this->debug): 
+            file_put_contents(__DIR__."/../../../../../logs/".$this->slugify($podcast->getTitle()).".txt", preg_replace("!Array\s*=>\s*\(\s*\)\s!isu","Array => ()",print_r($report, 1)));
+        endif;
+
         return true;
     }
 
@@ -509,8 +565,14 @@ class PodcastDBWrapper {
             
         else:
             // Remove the hash check here – should be done completely in worker class. If this function gets called, the feed was already fully loaded, so we can just update the database no matter what.
-            $wasSuccesful = $this->database->update("podcasts", $values, ["feed" => $podcast->getFeedURL()]);
-            $ID = $this->database->id();
+            try {
+                $wasSuccesful = $this->database->update("podcasts", $values, ["feed" => $podcast->getFeedURL()]);
+                $ID = $this->database->id();
+            } catch (\Exception $e) {
+                $wasSuccesful = false;
+                $ID = false;
+            }
+#            $ID = $this->database->id();
             
         endif;
 // dump($additionalFields);dump($values);dump($this->database->select("podcasts", "*"));
