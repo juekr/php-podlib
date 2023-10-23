@@ -11,8 +11,6 @@
 
 namespace PHPPodLib;
 
-require_once(__DIR__."/../../vendor/autoload.php");
-
 use Exception;
 use \ForceUTF8\Encoding;
 use Symfony\Component\Cache\Adapter\FilesystemAdapter;
