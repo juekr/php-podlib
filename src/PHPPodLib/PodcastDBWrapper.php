@@ -312,10 +312,11 @@ class PodcastDBWrapper {
             $link = $episode->getLink();
             $tags = $episode->getTags();
 
+            $tag_report = "Got tags via native getTags() function.";
             if (empty($tags)): 
                 # try various different retrieval methods
                 $t = $this->try_and_fetch_alternative_tags($episode);
-                if ($this->debug) print_r($t["report"]);
+                $tag_report = print_r($t["report"], 1);
                 $tags = $t["tags"];
             endif;
 
@@ -363,8 +364,8 @@ class PodcastDBWrapper {
             file_put_contents(__DIR__."/../../../../../logs/".$this->slugify($podcast->getTitle()).".txt", 
                 "Episode: ".$episode->getTitle()."($episodeId)"   
                 ."\nLink: ". $link
-                . "\nTags found in: ".$found_in
                 . "\nTags: ".implode(", ", $tags)
+                . "\nDetails: ".$tag_report
             );
         endif;
 
