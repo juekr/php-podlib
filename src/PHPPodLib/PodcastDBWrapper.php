@@ -326,7 +326,7 @@ class PodcastDBWrapper {
 
             // Website tags sometimes don't fit, so we need to remap some of them
             if (!empty($tags)): // there are tags in the feed
-                if ($this->debug) echo "[TAGS N: inserting...]\n";
+                if ($this->debug) echo "[TAGS inserting]".implode(", ", $tags)."\n";
                 $i = 0;
                 foreach ($tags as $tag):
                     $tag = trim($tag);
