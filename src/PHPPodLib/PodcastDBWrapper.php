@@ -327,6 +327,8 @@ class PodcastDBWrapper {
             // $found_in = $tags["found in"];
 
             // Website tags sometimes don't fit, so we need to remap some of them
+            if (empty($tags)) if ($this->debug) echo "[NO TAGS for EP: ".$episode->getTitle()."]\n";
+            
             if (!empty($tags)): // there are tags in the feed
                 if ($this->debug) echo "[TAGS inserting]".implode(", ", $tags)."\n";
                 $i = 0;
