@@ -438,7 +438,7 @@ class PodcastDBWrapper {
             );
             #endif;
             if (!empty($step_tags)) $report[] = array("episode" => $episode->getTitle(), "tags" => $step_tags, "pattern" => "[1.1.".($idx+1)."] #tag1, #tag 2, #tag X");
-            $tags += $step_tags;
+            $tags += $step_tags; $step_tags = []; 
 
             // 1.2  trying to fetch hashtags in description (round two with shownotes), then in shownotes – 
             //      format "Tags: hashtag, #Hashtag 2, ..."
@@ -450,7 +450,7 @@ class PodcastDBWrapper {
             );
 
             if (!empty($step_tags)) $report[] = array("episode" => $episode->getTitle(), "tags" => $step_tags, "pattern" => "[1.2.".($idx+1)."] Tags: hashtag, #Hashtag 2, ...");
-            $tags += $step_tags;
+            $tags += $step_tags; $step_tags = [];
         endforeach;
 
 
@@ -472,7 +472,7 @@ class PodcastDBWrapper {
                     );
 
                     if (!empty($step_tags)) $report[] = array("episode" => $episode->getTitle(), "tags" => $step_tags, "pattern" => "[2.1] Tags: <meta keywords...>");
-                    $tags += $step_tags;
+                    $tags += $step_tags; $step_tags = [];
 
                     #$pattern = "!<meta[^>]*name=[\"']+keywords[\"']+[^>]*content=[\"']+([^\"^']*)[\"']+!isU";
                     // if (preg_match_all($pattern, $contents, $out)):
@@ -486,7 +486,16 @@ class PodcastDBWrapper {
                         );
                     endif;
                     if (!empty($step_tags)) $report[] = array("episode" => $episode->getTitle(), "tags" => $step_tags, "pattern" => "[2.2] Tags: podbean-style => <a href=\".../category/...\" >");
-                    $tags += $step_tags;
+                    $tags += $step_tags; $step_tags = []; $step_tags = [];
+
+                    if (empty($tags)):
+                        $step_tags = $this->find_tags_by_regex_1step(
+                            $haystack = $contents,
+                            $regex = "!<a[^>]*href=[\"'][^\"^']*[\"']+[^>]*rel=[\"']tag[\"']+[^>]*>([^<]*)</a>+!isU"
+                        );
+                    endif;
+                    if (!empty($step_tags)) $report[] = array("episode" => $episode->getTitle(), "tags" => $step_tags, "pattern" => "[2.3] Tags: <a href=\"...\" rel=\"tag\">(.*)</a>");
+                    $tags += $step_tags; $step_tags = [];
 
                 endif;
 
