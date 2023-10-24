@@ -742,11 +742,12 @@ public function getFilteredEpisodes(string $matchtype = null, string $field = nu
         endif;
     }
 
-    private function get_stripped_description($keep_urls = true) {
-        if (empty($this->getDescription())) return "";
+    private function get_stripped_description($keep_urls = true, $override_description = null) {
+        $description = $override_description ? $override_description : $this->getDescription();
+        if (empty($description)) return "";
         $keep = ["<br>", "<p>"];
         if ($keep_urls) $keep[] = "<a>";
-        $str = trim(strip_tags($this->getDescription(), $keep));
+        $str = trim(strip_tags($description, $keep));
         $str = preg_replace("!^\s*$!im", "", $str);
         return preg_replace("/(?:<br>|<br\s?\/>|[\r\n]:?)+/", "\n", $str);
     } 
