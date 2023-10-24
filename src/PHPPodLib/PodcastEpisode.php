@@ -151,6 +151,7 @@ class PodcastEpisode {
             $tags = (string)($tags[0]);
         else:
             // TODO: parse <link> for keywords in website meta
+            # beta
             return;
         endif;
         $this->meta["tags"] = array_map("ucwords", array_map("trim", explode(",", $tags))); // Trim all elements and applay ucwords
