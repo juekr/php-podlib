@@ -272,7 +272,7 @@ class PodcastDBWrapper {
             if ($hash == $episode->getHash()) continue; // if hashes match, everything is up to date
             $this->database->delete("episodes", ["AND" => ["podcastid" => $podcastId, "guid" => $episode->getGuid()],]);
             $this->database->delete("tags2episodes", ["AND" => ["podcastid" => $podcastId, "episodeguid" => $episode->getGuid()]]);
-           
+
             $berlin = new DateTimeZone("Europe/Berlin");
             $now = new DateTime("now", $berlin);
 
@@ -296,7 +296,7 @@ class PodcastDBWrapper {
                 "shownotes" => $episode->getContent() ?  $episode->getContent() : "",
                 "duration" => $episode->getDuration(true) ? ($episode->getDuration(true)) : 0
             ];
-           
+
             try {
                 if (!$this->database->insert("episodes", $values)):
                     if ($this->database->error):
@@ -312,126 +312,16 @@ class PodcastDBWrapper {
             $link = $episode->getLink();
             $tags = $episode->getTags();
 
-            $report[$episodeId] = array(
-                "episode" => $episode->getTitle(),
-                "link" => $link,
-                "tags" => [],
-                "found in" => []
-            );
-
-            // NO TAGS?
-            // Case 1: ~~for anchor feeds~~, look for hastags in shownotes
-            // if (empty($tags) && strpos($link, "spotify.com") > 0): // still empty? look in the shownotes!
-            if (empty($tags)): // still empty? look in the shownotes!
-                if ($this->debug) echo "[TAGS: #tag1, #tag2]\n";
-                $include_pattern = "!#([a-zA-Z0-9-_üÜöÖäÄß\s^\n]{3,})(?=(?:[#,\n]|\s---\s|$:?)+)!is";
-                $exclude_pattern = "!#([0-9A-F]{3}){1,2}!i";
-                $stripped_content = empty($episode->getContent()) ? "" : strip_tags($episode->getContent());
-                if (preg_match_all($include_pattern, $stripped_content, $out)):
-                    $tags = array_map("trim", $out[1]);
-                    foreach($tags as $idx => $tag):
-                        if (preg_match($exclude_pattern, $tag)) unset($tags[$idx]);
-                        $tags[$idx] = ucwords(str_replace("_", " ", $tag));
-                    endforeach;
-                # look through shownotes, then description
-                elseif (preg_match_all($include_pattern, strip_tags($episode->getDescription()), $out)):
-                    $tags = array_map("trim", $out[1]);
-                    foreach($tags as $idx => $tag):
-                        if (preg_match($exclude_pattern, $tag)) unset($tags[$idx]);
-                        $tags[$idx] = ucwords(str_replace("_", " ", $tag));
-                    endforeach;
-                endif;
-
-                if (!empty($tags)): 
-                    $report[$episodeId]["tags"] += $tags;
-                    $report[$episodeId]["from"][] = "[TAGS: #tag1, #tag2]";
-                endif;
-
+            if (empty($tags)): 
+                # try various different retrieval methods
+                $t = $this->try_and_fetch_alternative_tags($episode);
+                if ($this->debug) print_r($t["report"]);
+                $tags = $t["tags"];
             endif;
 
-            // Still no tags?
-            if (empty($tags) || count($tags) < 3):
-                if ($this->debug) echo "[TAGS: Tags: Tag 1, Tag 2]\n";
-                try {
-                    $pattern = "!Tags:(.*)(?:\n|$:?)!isU";
-                    if (preg_match($pattern, strip_tags($episode->getDescription()), $out)):
-                        $tags = array_map("trim", explode(",", $out[1]));
-                    endif;
-                } catch (\Exception $e) {
-                    $tags = [];
-                }
-                if (!empty($tags)): 
-                    $report[$episodeId]["tags"] += $tags;
-                    $report[$episodeId]["from"][] = "[TAGS: Tags: Tag 1, Tag 2]";
-                endif;
-            endif;
-
-            // NO TAGS? 
-            // Case 2: look for <meta keywords> on mentioned website
-            if (empty($tags) && strpos($link, "spotify.com") == false ): // no tags in feed? look in the website mentioned
-                if ($this->debug) echo "[TAGS 2: meta keywords]\n";
-                if (!empty($link)):
-                    try {
-                        $contents = @file_get_contents($link);
-                        if (empty($contents)) throw new Exception('Site not reachable/found.');
-                        $pattern = "!<meta[^>]*name=[\"']+keywords[\"']+[^>]*content=[\"']+([^\"^']*)[\"']+!isU";
-                        if (preg_match_all($pattern, $contents, $out)):
-                            $tags = array_map("trim", explode(",", $out[1][0]));
-                        endif;
-                    } catch (\Exception $e) {
-                        $tags = [];
-                    }
-                endif; // check website for tags
-                if (!empty($tags)): 
-                    $report[$episodeId]["tags"] += $tags;
-                    $report[$episodeId]["from"][] = "[TAGS 2: meta keywords]";
-                endif;
-            endif;
-
-            // NO TAGS? 
-            // Case 3: look for <a rel="tag"> on mentioned website
-            if (empty($tags)): // no tags in feed or website – look for rel="tag" on website
-                if ($this->debug) echo "[TAGS 3: rel tag]\n";
-                if (!empty($link)):
-                    try {
-                        if (empty($contents)) $contents = @file_get_contents($link);
-                        if (empty($contents)) throw new Exception('Site not reachable/found.');
-                        $pattern = "!<a[^>]*rel=[\"']+tag[\"']+[^>]*>([^<]*)</a>+!isU";
-                        if (preg_match_all($pattern, $contents, $out)):
-                            $tags = array_map("trim", $out[1]);
-                        endif;
-                    } catch (\Exception $e) {
-                        $tags = [];
-                    }
-                endif; // check website for tags
-                if (!empty($tags)): 
-                    $report[$episodeId]["tags"] += $tags;
-                    $report[$episodeId]["from"][] = "[TAGS 2: rel tag on website]";
-                endif;
-            endif;
-
-            // No Tags? Look for Podbean Tag widget
-            if (empty($tags) && strpos($link, "podbean.com") > 0):
-                if ($this->debug) echo "[TAGS 4: podbean tags]\n";
-                if (!empty($link)):
-                    try {
-                        $contents = @file_get_contents($link);
-                        if (empty($contents)) throw new Exception('Site not reachable/found.');
-                        $pattern = "!<a[^>]*href=[\"']+/category/[^\"^']*[\"']+[^>]*>([^<]*)</a>+!isU";
-                        if (preg_match_all($pattern, $contents, $out)):
-                            $tags = array_map("trim", $out[1]);
-                        endif;
-                   } catch (\Exception $e) {
-                        $tags = [];
-                    }
-                endif; // check website for tags
-                if (!empty($tags)): 
-                    $report[$episodeId]["tags"] += $tags;
-                    $report[$episodeId]["from"][] = "[TAGS: href /w category on website]";
-                endif;
-            endif;
-
-            if ($this->debug) echo implode(", ", $tags)."\n";
+            // if ($this->debug) echo print_r($tags,1)."\n";
+            // $tags = $tags["tags"];
+            // $found_in = $tags["found in"];
 
             // Website tags sometimes don't fit, so we need to remap some of them
             if (!empty($tags)): // there are tags in the feed
@@ -470,11 +360,233 @@ class PodcastDBWrapper {
         endforeach; // episodes
 
         if ($this->debug): 
-            file_put_contents(__DIR__."/../../../../../logs/".$this->slugify($podcast->getTitle()).".txt", preg_replace("!Array\s*=>\s*\(\s*\)\s!isu","Array => ()",print_r($report, 1)));
+            file_put_contents(__DIR__."/../../../../../logs/".$this->slugify($podcast->getTitle()).".txt", 
+                "Episode: ".$episode->getTitle()."($episodeId)"   
+                ."\nLink: ". $link
+                . "\nTags found in: ".$found_in
+                . "\nTags: ".implode(", ", $tags)
+            );
         endif;
 
         return true;
     }
+
+    private function find_tags_by_regex_1step($haystack, $regex, $regex_exclude = null) 
+    {
+        $tags = [];
+        if (preg_match_all($regex, $haystack, $out)):
+            $tags = $out[1];
+        endif;
+        $tags = $this->clean_and_exclude_from_array($tags, $regex_exclude);
+        return $tags;
+    }
+
+    private function find_tags_by_regex_2step($haystack,
+                                                $regex,
+                                                $splitex = "/[|,\n]/",
+                                                $regex_exclude = null) 
+    {
+        $tags = [];
+        if (preg_match($regex, $haystack, $out)):
+            $inner_haystack = $out[1];
+            $tags = preg_split($splitex, $inner_haystack);
+        endif;
+        return $this->clean_and_exclude_from_array($tags, $regex_exclude);
+    }
+
+    private function clean_and_exclude_from_array($arr, $test_exclude = null, $remove_empty = true, $trim = true, $ucfirst = true) 
+    {
+        $result = [];
+        foreach ($arr as $item):
+            if ($remove_empty && empty($item)) continue;
+            if (!empty($test_exclude)) if (preg_match($test_exclude, $item)) continue;
+            $item = str_replace("_", " ", $item);
+            if ($ucfirst) $item = ucfirst($item);
+            if ($trim) $item = trim($item);
+            $result[] = $item;
+        endforeach;
+        return $result;
+    }
+
+    public function try_and_fetch_alternative_tags($episode) {
+        $tags = [];
+        $from = "";
+        $report = [];
+        $regex_exclude = "!#([0-9A-F]{3}){1,2}(?=(?:\s|$|[^\w]:?)=?)!i";
+
+        // No tags?
+
+        // 1. All of these checks need to be tested against description, then against shownotes
+        foreach ([$episode->get_stripped_description($keep_urls = true), $episode->get_stripped_shownotes($keep_urls = true)] as $idx => $haystack):
+            if (empty(trim($haystack))) continue;
+
+            // 1.1  trying to fetch hashtags in description (round two with shownotes), then in shownotes – 
+            //      format "#hashtag, #hashtag2, #Hashtag 3, ..."
+            #if (empty($tags)):
+            $step_tags = $this->find_tags_by_regex_1step(
+                $haystack = $haystack,
+                $regex = "!#([a-zA-Z0-9-_üÜöÖäÄß\ ]{3,})(?=(?:[#,\n]{1,2}|\s{2,}|\s---\s|$:?)+)!im",
+                $regex_exclude = $regex_exclude
+            );
+            #endif;
+            if (!empty($step_tags)) $report[] = array("episode" => $episode->getTitle(), "tags" => $step_tags, "pattern" => "[1.1.".($idx+1)."] #tag1, #tag 2, #tag X");
+            $tags += $step_tags;
+
+            // 1.2  trying to fetch hashtags in description (round two with shownotes), then in shownotes – 
+            //      format "Tags: hashtag, #Hashtag 2, ..."
+            $step_tags = $this->find_tags_by_regex_2step(
+                $haystack = $haystack,
+                $regex = "!(?:[\s\n>]|^:?)(?:Tags|Keywords|Topics|Themen:?):(.*?)(?:\s---\s|\n|</|$:?)!ism",
+                $splitex = "/[|,\n]/",
+                $regex_exclude = $regex_exclude
+            );
+
+            if (!empty($step_tags)) $report[] = array("episode" => $episode->getTitle(), "tags" => $step_tags, "pattern" => "[1.2.".($idx+1)."] Tags: hashtag, #Hashtag 2, ...");
+            $tags += $step_tags;
+        endforeach;
+
+
+        // 2. Still no tags? Look on the linked website
+        if (empty($tags)):
+            if (!empty($episode->getLink())):
+                try {
+                    $contents = @file_get_contents($episode->getLink());
+                    if (empty($contents)) throw new Exception('Site not reachable/found.');
+                } catch (\Exception $e) {
+                    $contents = null;
+                    $step_tags = [];
+                }
+
+                if (!empty($contents)):
+                    $step_tags = $this->find_tags_by_regex_2step(
+                        $haystack = $contents,
+                        $regex = "!<meta[^>]*name=[\"']+keywords[\"']+[^>]*content=[\"']+([^\"^']*)[\"']+!isU"
+                    );
+
+                    if (!empty($step_tags)) $report[] = array("episode" => $episode->getTitle(), "tags" => $step_tags, "pattern" => "[2.1] Tags: <meta keywords...>");
+                    $tags += $step_tags;
+
+                    #$pattern = "!<meta[^>]*name=[\"']+keywords[\"']+[^>]*content=[\"']+([^\"^']*)[\"']+!isU";
+                    // if (preg_match_all($pattern, $contents, $out)):
+                    //     $tags = array_map("trim", explode(",", $out[1][0]));
+                    // endif;
+
+                    if (empty($tags) && strpos($episode->getLink(), "podbean.com")):
+                        $step_tags = $this->find_tags_by_regex_1step(
+                            $haystack = $contents,
+                            $regex = "!<a[^>]*href=[\"']+/category/[^\"^']*[\"']+[^>]*>([^<]*)</a>+!isU"
+                        );
+                    endif;
+                    if (!empty($step_tags)) $report[] = array("episode" => $episode->getTitle(), "tags" => $step_tags, "pattern" => "[2.2] Tags: podbean-style => <a href=\".../category/...\" >");
+                    $tags += $step_tags;
+
+                endif;
+
+            endif; // check website for tags
+
+        endif;
+
+        // // NO TAGS?
+        // // Case 1: ~~for anchor feeds~~, look for hastags in shownotes
+        // // if (empty($tags) && strpos($link, "spotify.com") > 0): // still empty? look in the shownotes!
+        // if (empty($tags)): // still empty? look in the shownotes!
+        //     $include_pattern = "!#([a-zA-Z0-9-_üÜöÖäÄß\s^\n]{3,})(?=(?:[#,\n]|\s---\s|$:?)+)!is";
+        //     $exclude_pattern = "!#([0-9A-F]{3}){1,2}!i";
+        //     $stripped_content = empty($episode->getContent()) ? "" : strip_tags($episode->getContent());
+        //     if (preg_match_all($include_pattern, $stripped_content, $out)):
+        //         $tags = array_map("trim", $out[1]);
+        //         foreach($tags as $idx => $tag):
+        //             if (preg_match($exclude_pattern, $tag)) unset($tags[$idx]);
+        //             $tags[$idx] = ucwords(str_replace("_", " ", $tag));
+        //         endforeach;
+        //     # look through shownotes, then description
+        //     elseif (preg_match_all($include_pattern, strip_tags($episode->getDescription()), $out)):
+        //         $tags = array_map("trim", $out[1]);
+        //         foreach($tags as $idx => $tag):
+        //             if (preg_match($exclude_pattern, $tag)) unset($tags[$idx]);
+        //             $tags[$idx] = ucwords(str_replace("_", " ", $tag));
+        //         endforeach;
+        //     endif;
+
+        //     if (!empty($tags)) $from = "[TAGS: #tag1, #tag2]";
+
+        // endif;
+
+        // // Still no tags?
+        // if (empty($tags) || count($tags) < 3):
+        //     try {
+        //         $pattern = "!Tags:(.*)(?:\n|$:?)!isU";
+        //         if (preg_match($pattern, strip_tags($episode->getDescription()), $out)):
+        //             $tags = array_map("trim", explode(",", $out[1]));
+        //         endif;
+        //     } catch (\Exception $e) {
+        //         $tags = [];
+        //     }
+
+        //     if (!empty($tags)) $from = "[TAGS: Tags: Tag 1, Tag 2]";
+        // endif;
+
+        // NO TAGS? 
+        // Case 2: look for <meta keywords> on mentioned website
+        // if (empty($tags) && strpos($episode->getLink(), "spotify.com") == false ): // no tags in feed? look in the website mentioned
+        //     if (!empty($link)):
+        //         try {
+        //             $contents = @file_get_contents($link);
+        //             if (empty($contents)) throw new Exception('Site not reachable/found.');
+        //             $pattern = "!<meta[^>]*name=[\"']+keywords[\"']+[^>]*content=[\"']+([^\"^']*)[\"']+!isU";
+        //             if (preg_match_all($pattern, $contents, $out)):
+        //                 $tags = array_map("trim", explode(",", $out[1][0]));
+        //             endif;
+        //         } catch (\Exception $e) {
+        //             $tags = [];
+        //         }
+        //     endif; // check website for tags
+
+        //     if (!empty($tags)) $from = "[TAGS 2: meta keywords]";
+        // endif;
+
+        // // NO TAGS? 
+        // // Case 3: look for <a rel="tag"> on mentioned website
+        // if (empty($tags)): // no tags in feed or website – look for rel="tag" on website
+        //     if (!empty($link)):
+        //         try {
+        //             if (empty($contents)) $contents = @file_get_contents($link);
+        //             if (empty($contents)) throw new Exception('Site not reachable/found.');
+        //             $pattern = "!<a[^>]*rel=[\"']+tag[\"']+[^>]*>([^<]*)</a>+!isU";
+        //             if (preg_match_all($pattern, $contents, $out)):
+        //                 $tags = array_map("trim", $out[1]);
+        //             endif;
+        //         } catch (\Exception $e) {
+        //             $tags = [];
+        //         }
+        //     endif; // check website for tags
+
+        //     if (!empty($tags)) $from = "[TAGS 2: rel tag on website]";
+        // endif;
+
+        // No Tags? Look for Podbean Tag widget
+        // if (empty($tags) && strpos($episode->getLink(), "podbean.com") > 0):
+        //     if ($this->debug) echo "[TAGS 4: podbean tags]\n";
+        //     if (!empty($link)):
+        //         try {
+        //             $contents = @file_get_contents($link);
+        //             if (empty($contents)) throw new Exception('Site not reachable/found.');
+        //             $pattern = "!<a[^>]*href=[\"']+/category/[^\"^']*[\"']+[^>]*>([^<]*)</a>+!isU";
+        //             if (preg_match_all($pattern, $contents, $out)):
+        //                 $tags = array_map("trim", $out[1]);
+        //             endif;
+        //         } catch (\Exception $e) {
+        //             $tags = [];
+        //         }
+        //     endif; // check website for tags
+            
+           // if (!empty($tags)) $from = "[TAGS: href /w category on website]";
+       // endif;
+
+        return ["tags" => $tags, "report" => $report ];
+    }
+
+
 
     // Some tags need to be mapped onto others (due to limitations in keyword/hashtag notation, user error and some other effects)
     private function remapTags($tag, $tagfile) {
