@@ -133,7 +133,7 @@ class PodcastDBWrapper {
     {
         $select = "select count(tagid) as usage,tag from tags2episodes left join tags on (tags.rowid=tagid) ";
         $where = " WHERE podcastid=\"".$podcast_id."\"";
-        $group = " group by (tagid) ORDER by " . $order_by_usage ? "usage DESC" : "tag ASC";
+        $group = " group by (tagid) ORDER by " . ($order_by_usage ? "usage DESC" : "tag ASC");
         $result = $this->database->query($select.$where.$group);
         return $result->fetchAll();
     }
