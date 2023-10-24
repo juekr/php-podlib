@@ -742,6 +742,15 @@ public function getFilteredEpisodes(string $matchtype = null, string $field = nu
         endif;
     }
 
+    private function get_stripped_description($keep_urls = true) {
+        if (empty($this->getDescription())) return "";
+        $keep = ["<br>", "<p>"];
+        if ($keep_urls) $keep[] = "<a>";
+        $str = trim(strip_tags($this->getDescription(), $keep));
+        $str = preg_replace("!^\s*$!im", "", $str);
+        return preg_replace("/(?:<br>|<br\s?\/>|[\r\n]:?)+/", "\n", $str);
+    } 
+
     public function download_feed_and_return_xml($feed = null) //: string
     {
         if (empty($feed)) $feed = $this->feedUrl;
