@@ -94,6 +94,24 @@ class PodcastEpisode {
         }
     }
 
+    private function get_stripped_X($haystack, $keep_urls = true) {
+        if (empty($haystack)) return "";
+        $keep = ["<br>", "<p>"];
+        if ($keep_urls) $keep[] = "<a>";
+        $str = trim(strip_tags($haystack, $keep));
+        $str = preg_replace("!^\s*$!im", "", $str);
+        return preg_replace("/(?:<br>|<br\s?\/>|[\r\n]:?)+/", "\n", $str);
+    } 
+
+    # 🔲
+    public function get_stripped_description($keep_urls = true) {
+        return $this->get_stripped_X($this->getDescription(), $keep_urls);
+    }
+    # 🔲
+    public function get_stripped_shownotes($keep_urls = true) {
+        return $this->get_stripped_X($this->getShownotes(), $keep_urls);
+    }
+
     // Collecting and handling item meta
     private function extractMetaFromItem(bool $debug = false)  {
         if (empty($this->xmlItem)) return false;
