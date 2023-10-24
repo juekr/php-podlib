@@ -261,6 +261,8 @@ class PodcastDBWrapper {
             if ($this->debug) echo " info: PodcastID: ".$podcastId."\n";
         endif;
 
+        $report = "";
+
         foreach ($episodes as $i => $episode):
             $episodeNumber = $episode->getEpisodeNumber() ?  $episode->getEpisodeNumber() : -1;
 
@@ -358,14 +360,17 @@ class PodcastDBWrapper {
                     endif;
                 endforeach; // tags
             endif; 
+
+            $report .= "\n\n"."Episode: ".$episode->getTitle()."($episodeId)"
+            ."\nLink: ". $link
+            . "\nTags: ".implode(", ", $tags)
+            . "\nDetails: ".$tag_report;
         endforeach; // episodes
 
         if ($this->debug): 
-            file_put_contents(__DIR__."/../../../../../logs/".$this->slugify($podcast->getTitle()).".txt", 
-                "Episode: ".$episode->getTitle()."($episodeId)"   
-                ."\nLink: ". $link
-                . "\nTags: ".implode(", ", $tags)
-                . "\nDetails: ".$tag_report
+            file_put_contents(
+                __DIR__."/../../../../../logs/".$this->slugify($podcast->getTitle()).".txt", 
+                $report
             );
         endif;
 
