@@ -132,9 +132,10 @@ class PodcastDBWrapper {
     public function getTagsByPodcast($podcast_id, $order_by_usage = true) 
     {
         $select = "select count(tagid) as usage,tag from tags2episodes left join tags on (tags.rowid=tagid) ";
-        $or = " WHERE podcastid=\"".$podcast_id."\"";
+        $where = " WHERE podcastid=\"".$podcast_id."\"";
         $order = " group by (tagid) ORDER by " . $order_by_usage ? "usage DESC" : "tag ASC";
-        $result = $this->database->query($select.$or.$order);
+        $result = $this->database->query($select.$order.$where);
+        die($select.$order.$where);
         return $result->fetchAll();
     }
 
