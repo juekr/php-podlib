@@ -339,10 +339,10 @@ class PodcastDBWrapper {
 
             if ($this->debug):
                 if (empty($tags)): 
-                    echo "[__ NO ".$echo."\n";
+                    echo "[❌ NO ".$echo."\n";
                 elseif (!empty($tags)):
                     if ($last == $current):
-                        echo "[!! DUPLICATE ".$echo." ".$current."\n";
+                        echo "[🔲 DUPLICATE ".$echo." ".$current."\n";
                     else:
                         echo "[✅ ".$echo." ".$current."\n";
                     endif;
