@@ -271,8 +271,15 @@ class PodcastDBWrapper {
             if ($this->debug) echo " info: PodcastID: ".$podcastId."\n";
         endif;
 
-        $report = "";
-        $last = false;
+        $report_status = [
+            "report" => "",
+            "last" => [],
+            "episodes with tags" => 0,
+            "episodes with unique tags" => 0,
+            "overall tags" => 0,
+            "overall unique tags" => 0,
+            "all tags" => []
+        ];
 
         foreach ($episodes as $i => $episode):
             $episodeNumber = $episode->getEpisodeNumber() ?  $episode->getEpisodeNumber() : -1;
@@ -337,23 +344,33 @@ class PodcastDBWrapper {
             $echo = "tags for ".$podcastShortname.", EP: ".$episode->getTitle()."]";
             $current = implode(", ", $tags);
 
+
             if ($this->debug):
                 if (empty($tags)): 
                     echo "[❌ NO ".$echo."\n";
                 elseif (!empty($tags)):
-                    if ($last == $current):
+                    $report_status["episodes with tags"] +=  1;
+                    $report_status["overall tags"] += count($tags);
+                    $report_status["overall unique tags"] += count($report_status["all tags"]);
+                    
+                    if ($report_status["last"][count($report_status["last"])-1] == $current):
                         echo "[🔲 DUPLICATE ".$echo." ".$current."\n";
                     else:
                         echo "[✅ ".$echo." ".$current."\n";
                     endif;
                 endif;
             endif;
-            $last = implode(", ", $tags);
+            if (!in_array(implode(", ", $tags), $report_status["last"])) $report_status["episodes with unique tags"] += 1;
+            $report_status["last"][] = implode(", ", $tags);
+
 
             // Website tags sometimes don't fit, so we need to remap some of them
             if (!empty($tags)): // there are tags in the feed
                 $i = 0;
                 foreach ($tags as $tag):
+                    if (!in_array(strtolower($tag), $report_status["all tags"])) $report_status["all tags"][] = strtolower($tag);
+                    
+
                     $tag = trim($tag);
                     if (empty($tag)) continue;
                     if (file_exists($remapTagMdFile)): 
@@ -384,7 +401,7 @@ class PodcastDBWrapper {
                 endforeach; // tags
             endif; 
 
-            $report .= "\n\n"."Episode: ".$episode->getTitle()."($episodeId)"
+            $report_status["report"] .= "\n\n"."Episode: ".$episode->getTitle()."($episodeId)"
             ."\nLink: ". $link
             . "\nTags: ".implode(", ", $tags)
             . "\nDetails: ".$tag_report;
@@ -393,7 +410,12 @@ class PodcastDBWrapper {
         if ($this->debug): 
             file_put_contents(
                 __DIR__."/../../../../../logs/".$this->slugify($podcast->getTitle()).".txt", 
-                $report
+                "Of ".count($episodes) . " episodes ".$report_status["episodes with tags"]." episodes have tags, thereof are ".$report_status["episodes with unique tags"]." episodes with unique tags."
+                ."\nThere are ".count($report_status["overall tags"])." tags being used by this podcast, "
+                ."thereof are ".count($report_status["overall unique tags"])." unique tags."
+                ."\n\n-----------\n\n"
+                .
+                $report_status["report"]
             );
         endif;
 
