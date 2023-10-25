@@ -487,7 +487,7 @@ class PodcastDBWrapper {
             //      format "Tags: hashtag, #Hashtag 2, ..."
             $step_tags = $this->find_tags_by_regex_2step(
                 $haystack = $haystack,
-                $regex = "!(?:[\s\n>]|^:?)(?:Tags|Keywords|Topics|Themen:?):(.*?)(?:\s---\s|\n|</|$:?)!ism",
+                $regex = "!(?:[\s\n>]|^:?)(?:Tags|Keywords:?):(.*?)(?:\s---\s|\n|</|$:?)!ism",
                 $splitex = "/[|,\n]/",
                 $regex_exclude = $regex_exclude
             );
