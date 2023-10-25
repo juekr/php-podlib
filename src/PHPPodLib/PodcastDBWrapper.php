@@ -272,6 +272,7 @@ class PodcastDBWrapper {
         endif;
 
         $report = "";
+        $last = false;
 
         foreach ($episodes as $i => $episode):
             $episodeNumber = $episode->getEpisodeNumber() ?  $episode->getEpisodeNumber() : -1;
@@ -332,16 +333,25 @@ class PodcastDBWrapper {
                 $tags = $t["tags"];
             endif;
 
-            // if ($this->debug) echo print_r($tags,1)."\n";
-            // $tags = $tags["tags"];
-            // $found_in = $tags["found in"];
+            // this is console output for debugging
+            $echo = "tags for ".$podcastShortname.", EP: ".$episode->getTitle()."]";
+            $current = implode(", ", $tags);
+
+            if ($this->debug):
+                if (empty($tags)): 
+                    echo "[__ NO ".$echo."\n";
+                elseif (!empty($tags)):
+                    if ($last == $current):
+                        echo "[!! DUPLICATE ".$echo." ".$current."\n";
+                    else:
+                        echo "[✅ ".$echo." ".$current."\n";
+                    endif;
+                endif;
+            endif;
+            $last = implode(", ", $tags);
 
             // Website tags sometimes don't fit, so we need to remap some of them
-            $echo = "tags for ".$podcastShortname.", EP: ".$episode->getTitle()."]";
-            if (empty($tags)) if ($this->debug) echo "[no".$echo."\n";
-            
             if (!empty($tags)): // there are tags in the feed
-                if ($this->debug) echo "[".$echo." ".implode(", ", $tags)."\n";
                 $i = 0;
                 foreach ($tags as $tag):
                     $tag = trim($tag);
