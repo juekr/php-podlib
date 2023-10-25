@@ -340,6 +340,7 @@ class PodcastDBWrapper {
                 $tags = $t["tags"];
             endif;
 
+            // <-- reporting
             // this is console output for debugging
             $echo = "tags for ".$podcastShortname.", EP: ".$episode->getTitle()."]";
             $current = implode(", ", $tags);
@@ -351,7 +352,6 @@ class PodcastDBWrapper {
                 elseif (!empty($tags)):
                     $report_status["episodes with tags"] +=  1;
                     $report_status["overall tags"] += count($tags);
-                    $report_status["overall unique tags"] += count($report_status["all tags"]);
                     
                     if ($report_status["last"][count($report_status["last"])-1] == $current):
                         echo "[🔲 DUPLICATE ".$echo." ".$current."\n";
@@ -362,14 +362,17 @@ class PodcastDBWrapper {
             endif;
             if (!(empty($tags))) if (!in_array(implode(", ", $tags), $report_status["last"])) $report_status["episodes with unique tags"] += 1;
             $report_status["last"][count($report_status["last"])-1] = implode(", ", $tags);
-
+            // reporting -->
 
             // Website tags sometimes don't fit, so we need to remap some of them
             if (!empty($tags)): // there are tags in the feed
                 $i = 0;
                 foreach ($tags as $tag):
+                    
+                    // <-- reporting
                     if (!in_array(strtolower($tag), $report_status["all tags"])) $report_status["all tags"][] = strtolower($tag);
-
+                    $report_status["overall unique tags"] = count($report_status["all tags"]);
+                    // reporting -->
 
                     $tag = trim($tag);
                     if (empty($tag)) continue;
