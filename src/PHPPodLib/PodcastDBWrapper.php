@@ -273,7 +273,7 @@ class PodcastDBWrapper {
 
         $report_status = [
             "report" => "",
-            "last" => [],
+            "last" => [ false ],
             "episodes with tags" => 0,
             "episodes with unique tags" => 0,
             "overall tags" => 0,
@@ -361,7 +361,7 @@ class PodcastDBWrapper {
                 endif;
             endif;
             if (!in_array(implode(", ", $tags), $report_status["last"])) $report_status["episodes with unique tags"] += 1;
-            $report_status["last"][] = implode(", ", $tags);
+            $report_status["last"][count($report_status["last"])-1] = implode(", ", $tags);
 
 
             // Website tags sometimes don't fit, so we need to remap some of them
@@ -411,8 +411,8 @@ class PodcastDBWrapper {
             file_put_contents(
                 __DIR__."/../../../../../logs/".$this->slugify($podcast->getTitle()).".txt", 
                 "Of ".count($episodes) . " episodes ".$report_status["episodes with tags"]." episodes have tags, thereof are ".$report_status["episodes with unique tags"]." episodes with unique tags."
-                ."\nThere are ".count($report_status["overall tags"])." tags being used by this podcast, "
-                ."thereof are ".count($report_status["overall unique tags"])." unique tags."
+                ."\nThere are ".($report_status["overall tags"])." tags being used by this podcast, "
+                ."thereof are ".($report_status["overall unique tags"])." unique tags."
                 ."\n\n-----------\n\n"
                 .
                 $report_status["report"]
