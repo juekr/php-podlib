@@ -260,7 +260,10 @@ class PodcastDBWrapper {
             return false;
         endif;
 
-        $podcastId = @$this->database->select('podcasts', ['rowid'], ["feed" => $podcast->getFeedURL()])[0]['rowid'];
+        $fromDB = @$this->database->select('podcasts', ['rowid', 'shortname', 'title'], ["feed" => $podcast->getFeedURL()])[0]['rowid'];
+        $podcastId = $fromDB['rowid'];
+        $podcastShortname = $fromDB['shortname'];
+        $podcastTitle = $fromDB['title'];
         if (!$podcastId || !is_numeric($podcastId)):
             if ($this->debug) echo " err: no podcastID found";
             return false;
@@ -334,10 +337,11 @@ class PodcastDBWrapper {
             // $found_in = $tags["found in"];
 
             // Website tags sometimes don't fit, so we need to remap some of them
-            if (empty($tags)) if ($this->debug) echo "[NO TAGS for EP: ".$episode->getTitle()."]\n";
+            $echo = "tags for ".$podcastShortname.", EP: ".$episode->getTitle()."]";
+            if (empty($tags)) if ($this->debug) echo "[no".$echo."\n";
             
             if (!empty($tags)): // there are tags in the feed
-                if ($this->debug) echo "[TAGS inserting]".implode(", ", $tags)."\n";
+                if ($this->debug) echo "[".$echo." ".implode(", ", $tags)."\n";
                 $i = 0;
                 foreach ($tags as $tag):
                     $tag = trim($tag);
