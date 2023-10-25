@@ -260,7 +260,7 @@ class PodcastDBWrapper {
             return false;
         endif;
 
-        $fromDB = @$this->database->select('podcasts', ['rowid', 'shortname', 'title'], ["feed" => $podcast->getFeedURL()])[0]['rowid'];
+        $fromDB = @$this->database->select('podcasts', ['rowid', 'shortname', 'title'], ["feed" => $podcast->getFeedURL()])[0];
         $podcastId = $fromDB['rowid'];
         $podcastShortname = $fromDB['shortname'];
         $podcastTitle = $fromDB['title'];
