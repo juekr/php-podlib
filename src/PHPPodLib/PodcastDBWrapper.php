@@ -360,7 +360,7 @@ class PodcastDBWrapper {
                     endif;
                 endif;
             endif;
-            if (!in_array(implode(", ", $tags), $report_status["last"])) $report_status["episodes with unique tags"] += 1;
+            if (!(empty($tags))) if (!in_array(implode(", ", $tags), $report_status["last"])) $report_status["episodes with unique tags"] += 1;
             $report_status["last"][count($report_status["last"])-1] = implode(", ", $tags);
 
 
@@ -369,7 +369,7 @@ class PodcastDBWrapper {
                 $i = 0;
                 foreach ($tags as $tag):
                     if (!in_array(strtolower($tag), $report_status["all tags"])) $report_status["all tags"][] = strtolower($tag);
-                    
+
 
                     $tag = trim($tag);
                     if (empty($tag)) continue;
