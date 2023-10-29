@@ -100,6 +100,11 @@ class PodcastEpisode {
         if ($keep_urls) $keep[] = "<a>";
         $str = trim(strip_tags($haystack, $keep));
         $str = preg_replace("!^\s*$!im", "", $str);
+
+        if ($keep_urls):
+            $str = preg_replace('@(?=[^"^\']?)(https?://([-\w\.]+[-\w])+(:\d+)?(/([\w/_\.#-]*(\?\S+)?[^\.\s])?)?)(?=[^"^\']?)@', '<a href="$1">$1</a>', $str);
+        endif;
+        
         return preg_replace("/(?:<br>|<br\s?\/>|[\r\n]:?)+/", "\n", $str);
     } 
 

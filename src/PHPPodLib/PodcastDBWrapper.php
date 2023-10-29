@@ -368,7 +368,7 @@ class PodcastDBWrapper {
             if (!empty($tags)): // there are tags in the feed
                 $i = 0;
                 foreach ($tags as $tag):
-                    
+
                     // <-- reporting
                     if (!in_array(strtolower($tag), $report_status["all tags"])) $report_status["all tags"][] = strtolower($tag);
                     $report_status["overall unique tags"] = count($report_status["all tags"]);
