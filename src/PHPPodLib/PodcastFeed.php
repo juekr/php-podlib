@@ -751,7 +751,7 @@ public function getFilteredEpisodes(string $matchtype = null, string $field = nu
         $str = preg_replace("!^\s*$!im", "", $str);
 
         if ($keep_urls):
-            $str = preg_replace('@(?=[^"^\']?)(https?://([-\w\.]+[-\w])+(:\d+)?(/([\w/_\.#-]*(\?\S+)?[^\.\s])?)?)(?=[^"^\']?)@', '<a href="$1">$1</a>', $str);
+            $str = preg_replace('~(?<!href=[\'"])(https?://[\w/._\-&?=]*)(?!</a>)(?=[^\w/._\-&=?]|$)~s', '<a href="$1">$1</a>', $str);
         endif;
 
         return preg_replace("/(?:<br>|<br\s?\/>|[\r\n]:?)+/", "\n", $str);
