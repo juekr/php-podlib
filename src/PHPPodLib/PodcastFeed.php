@@ -743,7 +743,7 @@ public function getFilteredEpisodes(string $matchtype = null, string $field = nu
     }
 
     public function get_stripped_description($keep_urls = true, $override_description = null) {
-        $description = empty($override_description) ? $override_description : $this->getDescription();
+        $description = !empty($override_description) ? $override_description : $this->getDescription();
         if (empty($description)) return "";
         $keep = ["<br>", "<p>"];
         if ($keep_urls) $keep[] = "<a>";
