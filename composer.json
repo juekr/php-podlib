@@ -6,7 +6,7 @@
     "require": {
         "neitanod/forceutf8": "^2.0",
         "symfony/polyfill-mbstring": "^1.23",
-        "symfony/cache": "^5.4"
+        "symfony/cache": "*"
     },
     "autoload": {
         "psr-0": { "PHPPodLib\\": "src/"}
