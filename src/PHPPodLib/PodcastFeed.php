@@ -277,20 +277,24 @@ class PodcastFeed {
 		TV-Rezensionen
 		Technologie
 		Wahre Kriminalfälle";
-
+    private $autoloading_success;
         
     public function __construct(string $feed = null, bool $debug = false, bool $autoload = false, $use_cache = false)
     {
+        $success = true;
         if ($feed != null) $this->setFeed($feed);
         if ($debug === true) $this->debug = true;
         if ($autoload === true): 
             if ($use_cache):
-                $this->loadFeedXml($this->get_feed_from_cache($feed, false, 60*60*12));
+                $success = $this->loadFeedXml($this->get_feed_from_cache($feed, false, 60*60*12));
             else:    
-                $this->loadFeedXml($this->download_feed_and_return_xml($feed));
+                $success = $this->loadFeedXml($this->download_feed_and_return_xml($feed));
             endif;
         endif;
+        $this->autoloading_success = $success;
     }
+
+    public function get_autoloading_success() { return $this->autoloading_success; }
 
     // Standard getter functions =============================
     public function getFeedURL() { return $this->feedUrl; }
@@ -432,7 +436,6 @@ class PodcastFeed {
         $tagArrayByOccurrence = array_count_values($tags);
         array_multisort($tagArrayByOccurrence, SORT_NUMERIC, SORT_DESC);
         if ($nof > -1) $tagArrayByOccurrence = array_slice($tagArrayByOccurrence, 0, $nof);
-
         return $tagArrayByOccurrence;
 	}
 
@@ -620,7 +623,7 @@ public function getFilteredEpisodes(string $matchtype = null, string $field = nu
                 if (count($image) > 0):
                     $image = $image[0];
                     if (isset($image->attributes()["href"])):
-                         $image = (string)$image->attributes()["href"];
+                        $image = (string)$image->attributes()["href"];
                     endif;
                 else:
                     $image = "";
@@ -672,11 +675,11 @@ public function getFilteredEpisodes(string $matchtype = null, string $field = nu
     public function estimatePublishingFrequency($roundTo = -1) {
 		// TODO: check is this works in all cases | UNTESTED
         // We try to find out, what the publishing frequency is based on the median difference between episodes' publishing dates
-		if (count($this->items) == 0) return false;
+		if (count($this->episodes) == 0) return false;
 		$lastdate = false;
 		$avgdate = false;
 		$counter = 0;
-		foreach ($this->items as $episode):
+		foreach ($this->episodes as $episode):
 			$epdate = \DateTime::createFromFormat("Y-m-d", $episode->getPubDate("Y-m-d"));
 			if (!$lastdate):
 				$lastdate = $epdate;

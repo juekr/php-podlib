@@ -19,7 +19,11 @@ $podcast = new PodcastFeed($feed, $debug, $autoload, $from_cache);
 ```
 Note: This is always a hot-load without caching!
 
+==UPDATE 2024-01-05== markdown exporter functionality added
+
 ## Caching helper function (requiring Symfony's cache component)
+
+==Note==: This is already included.
 
 ```bash
 composer require symfony/cache

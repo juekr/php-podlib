@@ -189,7 +189,7 @@ class PodcastEpisode {
                 endif;
             endif;
         endif;
-        if (strpos($duration, ":") >= 0):
+        if (!empty($duration) && strpos($duration, ":") >= 0):
             $this->meta["duration"] = $this->convertTimstringToSeconds($duration);
         else:
             $this->meta["duration"] = $duration;
