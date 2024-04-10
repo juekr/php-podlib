@@ -393,9 +393,15 @@ final class PodLib_test extends TestCase
     public function testCacheAging() {
         $feedUrl = $this->validFeeds[random_int(0, count($this->validFeeds)-1)];
         $podcast = new \PHPPodLib\PodcastFeed($feedUrl, $this->debug);
-        $i = $podcast->setFeedCacheDuration(24*60*60, 30);
-        $this>assertGreaterThanOrEqual(1, $i);
-        $this>assertLessThanOrEqual(30, $i);
+        $i_one = $podcast->setFeedCacheDuration(24*60*60, 30);
+        $feedUrl = $this->validFeeds[random_int(0, count($this->validFeeds)-1)];
+        $podcast = new \PHPPodLib\PodcastFeed($feedUrl, $this->debug);
+        $i_two = $podcast->setFeedCacheDuration(24*60*60, 30);
+        $this>assertGreaterThanOrEqual(1, $i_one);
+        $this>assertLessThanOrEqual(30, $i_one);
+        $this>assertGreaterThanOrEqual(1, $i_two);
+        $this>assertLessThanOrEqual(30, $i_two);
+        $this->assertTrue($i_one != $i_two);
     }
 }
 ?>
