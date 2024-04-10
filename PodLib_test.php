@@ -3,6 +3,8 @@ declare(strict_types=1);
 require_once('vendor/autoload.php');
 use \PHPUnit\Framework\TestCase;
 
+use function PHPUnit\Framework\assertGreaterThanOrEqual;
+use function PHPUnit\Framework\assertLessThanOrEqual;
 
 final class PodLib_test extends TestCase
 {
@@ -385,6 +387,15 @@ final class PodLib_test extends TestCase
         $podcast = new \PHPPodLib\PodcastFeed($feedUrl, $this->debug);
         $podcast->loadFeedXml($podcast->download_feed_and_return_xml($feedUrl)); 
         return $podcast;
+    }
+
+    // -------------------------------------------- cache duration
+    public function testCacheAging() {
+        $feedUrl = $this->validFeeds[random_int(0, count($this->validFeeds)-1)];
+        $podcast = new \PHPPodLib\PodcastFeed($feedUrl, $this->debug);
+        $i = $podcast->setFeedCacheDuration(24*60*60, 30);
+        $this>assertGreaterThanOrEqual(1, $i);
+        $this>assertLessThanOrEqual(30, $i);
     }
 }
 ?>

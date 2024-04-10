@@ -17,9 +17,8 @@ Now there is an autoload-xml functionality – to stay compatible, the parameter
 ```php
 $podcast = new PodcastFeed($feed, $debug, $autoload, $from_cache);
 ```
-Note: This is always a hot-load without caching!
 
-## Caching helper function (requiring Symfony's cache component)
+### Caching helper function (requiring Symfony's cache component)
 
 ```bash
 composer require symfony/cache
@@ -71,4 +70,11 @@ function get_feed_from_cache($feedUrl, $forceFresh = false, $cache_retention_tim
         return $grabbed;
     }
 ?>
+```
+
+### Set random cache age for feeds
+```php
+$p = new PodcastFeed($feedUrl);
+$retention = $p->setFeedCacheDuration(24*60*60, 30); # sets a minimum cache age of 1 day and a maximum of 30 days
+$p->loadFeedXml($p->get_feed_from_cache($feed));
 ```

@@ -2,7 +2,6 @@
 /* 
     This class provides convenient access to a podcast's feed information. 
     It expects the feed itself to be already loaded elsewhere.
-    It uses feed.io for feed parsing.
 
     Dependencies:
         - https://github.com/neitanod/forceutf8
@@ -17,6 +16,7 @@ use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 
 
 class PodcastFeed {
+    private $feedCacheDuration = 60*60*12;
     private $feedUrl = "";
     private $feedXML, $namespaces;
     private $feedHash;
@@ -55,6 +55,8 @@ class PodcastFeed {
     // player, subscribe button, cache, preview
     // pages feeds
     // filtering functions
+    // refactoring, testing and documenting
+    // strict typecasting and error handling
 
     private $categoryNamesEN = "Arts
 		Books
@@ -454,13 +456,28 @@ public function getFilteredEpisodes(string $matchtype = null, string $field = nu
         return $return;
     }
 
-    
+    public function getFeedCacheDuration() 
+    {
+        return $this->feedCacheDuration;
+    }
+
+
     // Setter functions =========================================
     public function setFeed(string $feed) {
         // The feed can and should be set a) while class construction or via this function – only after setting the feed, that class has a unique identifier
         $this->feedUrl = $feed; 
         $this->isValidFeed = $this->isValidUrl($feed);
         return $this->isValidFeed;
+    }
+
+    public function setFeedCacheDuration(int $duration = 12 * 60 * 60, int $random_factor = null) : int
+    {
+        if (empty($random_factor)): 
+            $this->feedCacheDuration = $duration;
+        else:
+            $this->feedCacheDuration = $duration * random_int(1,$random_factor);
+        endif;
+        return $this->feedCacheDuration;
     }
 
     public function isValidUrl(string $url = null) {
@@ -788,7 +805,8 @@ public function getFilteredEpisodes(string $matchtype = null, string $field = nu
         return $result;
     }
 
-    function get_feed_from_cache($feedUrl, $forceFresh = false, $cache_retention_time = 60 * 60 * 12) { // 1/2 day
+    function get_feed_from_cache($feedUrl, $forceFresh = false, $cache_retention_time = null) { // 1/2 day
+        if (empty($cache_retention_time)) $cache_retention_time = $this->feedCacheDuration;
         $p = new PodcastFeed($feedUrl);
     
         // Instantiate the caching adapter
