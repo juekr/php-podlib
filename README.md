@@ -87,3 +87,21 @@ There are several ways to obtain a podcast's or (to keep things consistent) epis
 - `get_stripped_description($keep_urls = true, $override_description = null, $keep = ["<br>", "<p>"])` (tries to match the best description for your individual purpose)
 - `getDescription()` (as it is)
 - `intelligentGetContent(string $length = "l", bool $stripHtml = true, bool $reduceLineBreaks = true)` (still kinda experimental)
+
+## Episode
+
+### Render an episode player
+
+```php
+    function getPlayer(array $podcast = array("feed" => "", "link" => "", "name" => "", "subtitle" => "", "summary" => "", "cover" => ""),
+           $type = 'podlove', $color = [
+        							    "brand" => "#E64415",
+        							    "brandDark" => "#235973",
+        							    "brandDarkest" => "#000",
+        							    "brandLightest" => "#DDCFB4",
+        							    "shadeDark" => "#888",
+        							    "shadeBase" => "#444",
+        							    "contrast" => "#111",
+        							    "alt" => "#FFF"
+							    ] , $size = "l", $subscribe = true) 
+```
