@@ -18,7 +18,9 @@ Now there is an autoload-xml functionality – to stay compatible, the parameter
 $podcast = new PodcastFeed($feed, $debug, $autoload, $from_cache);
 ```
 
-### Caching helper function (requiring Symfony's cache component)
+### Caching
+
+#### Caching helper function (requiring Symfony's cache component)
 
 ```bash
 composer require symfony/cache
@@ -72,9 +74,16 @@ function get_feed_from_cache($feedUrl, $forceFresh = false, $cache_retention_tim
 ?>
 ```
 
-### Set random cache age for feeds
+#### Set random cache age for feeds
 ```php
 $p = new PodcastFeed($feedUrl);
 $retention = $p->setFeedCacheDuration(24*60*60, 30); # sets a minimum cache age of 1 day and a maximum of 30 days
 $p->loadFeedXml($p->get_feed_from_cache($feed));
 ```
+
+### Description
+
+There are several ways to obtain a podcast's or (to keep things consistent) episode's description: 
+- `get_stripped_description($keep_urls = true, $override_description = null, $keep = ["<br>", "<p>"])` (tries to match the best description for your individual purpose)
+- `getDescription()` (as it is)
+- `intelligentGetContent(string $length = "l", bool $stripHtml = true, bool $reduceLineBreaks = true)` (still kinda experimental)
