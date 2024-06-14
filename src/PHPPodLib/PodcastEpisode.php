@@ -308,7 +308,7 @@ class PodcastEpisode {
             case "regex":
                 return (bool) preg_match($pattern, $target);
                 break;
-            case "contains_casesinsitive":
+            case "contains_caseinsensitive":
             case "contains":
                 if (is_array($target)):
                     return in_array($pattern, $target);
