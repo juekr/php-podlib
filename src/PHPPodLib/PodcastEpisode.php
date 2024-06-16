@@ -282,12 +282,20 @@ class PodcastEpisode {
         return $seconds;
     }
 
-    public function isMatch(string $matchtype = null, string $field = null, string $pattern = null) {
+    // public function isMatch(string $matchtype = null, string $field = null, string $pattern = null) {
+    public function isMatch(string $matchtype = null, string $fieldOrFieldFunction = null, string $pattern = null) {
         // Currently the function for matching tags, title, episodetype and basically every other xml tag content support searching for "string", substring or subarray "contains" or "regex" patterns
-        if (!isset($this->meta[$field]) || $this->meta[$field] === null) return false;
+        if ($fieldOrFieldFunction == null) return false;
+        if (!isset($this->meta[$fieldOrFieldFunction]) || $this->meta[$fieldOrFieldFunction] === null):
+            try {
+                $target = $this->$fieldOrFieldFunction();
+            } catch (\Exception $e) {
+                return false;
+            }
+        else:
+            $target = $this->meta[$fieldOrFieldFunction];
+        endif;
         if ($matchtype == null) return false;
-        if ($field == null) return false;
-        $target = $this->meta[$field];
 
         if (strpos($matchtype, "_caseinsensitive")): 
             $pattern = strtolower($pattern);
@@ -300,6 +308,7 @@ class PodcastEpisode {
 
         switch($matchtype):
             case "string_caseinsensitive":
+            case "string_casesensitive":
             case "string":
             case "integer":
             case "int":
@@ -308,6 +317,7 @@ class PodcastEpisode {
             case "regex":
                 return (bool) preg_match($pattern, $target);
                 break;
+            case "contains_caseinsensitive":
             case "contains_casesensitive":
             case "contains":
                 if (is_array($target)):
