@@ -383,6 +383,16 @@ class PodcastFeed {
         return $result[0];
     }
 
+    # [ ] tested
+    public function getSortedEpisodes($sortby = 'pubdate desc', $episodes_to_sort = []) {
+        $episodes = empty($episodes_to_sort) ? $this->getEpisodes() : $episodes_to_sort;
+        $dates = array_map(function ($element) {
+            return $element->getPubdate("YYYY-MM-DD HH:mm:ss");
+        }, $episodes);
+        array_multisort($episodes, strpos(strtolower($sortby), " desc" ) ? SORT_DESC : SORT_ASC, $dates);
+        return $episodes;
+    }
+
     public function getDuration(bool $inSeconds = false, $itemList = false ) {
 		// Calculate an entire podcasts duration by adding up each episodes play duration
         $items = [];

@@ -403,5 +403,14 @@ final class PodLib_test extends TestCase
         $this>assertLessThanOrEqual(30, $i_two);
         $this->assertTrue($i_one != $i_two);
     }
+
+    public function testSortedEpisodes() {
+        $podcast = $this->setupValidFeed();
+        $episodes = $podcast->getEpisodes();
+        $episodes2 = $podcast->getSortedEpisodes("pubdate Asc");
+        $this->assertnotEmpty($episodes);
+        $this->assertnotEmpty($episodes2);
+        $this->assertNotEquals($episodes, $episodes2);
+    }
 }
 ?>
