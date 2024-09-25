@@ -280,7 +280,7 @@ class PodcastFeed {
 		Technologie
 		Wahre Kriminalfälle";
 
-        
+
     public function __construct(string $feed = null, bool $debug = false, bool $autoload = false, $use_cache = false)
     {
         if ($feed != null) $this->setFeed($feed);
@@ -386,10 +386,40 @@ class PodcastFeed {
     # [ ] tested
     public function getSortedEpisodes($sortby = 'pubdate desc', $episodes_to_sort = []) {
         $episodes = empty($episodes_to_sort) ? $this->getEpisodes() : $episodes_to_sort;
-        $dates = array_map(function ($element) {
-            return $element->getPubdate("YYYY-MM-DD HH:mm:ss");
+        $sort_key = explode(" ", strtolower($sortby))[0] ?? "pubdate";
+        $sort_direction = explode(" ", strtolower($sortby))[1] ?? "desc";
+
+        $sort_keys = array_map(function ($element) use ($sort_key) {
+            switch($sort_key):
+                case "title":
+                    return strtolower(preg_replace("!([^\w])+!i", "",$element->getTitle())); # remove non-characters first
+                    break;
+                case "length":
+                case "duration":
+                case "seconds":
+                case "runtime":
+                    return $element->getDuration(true); # in seconds
+                    break;
+                case "episodetype":
+                case "episode_type":
+                case "type":
+                    return $element->getEpisodeType();
+                    break;
+                case "episodenumber":
+                case "episode":
+                case "season":
+                case "season_episode":
+                        return intval(($element->getSeason() ? $element->getSeason() : 0) * 1000 + ($element->getEpisodeNumber() ? $element->getEpisodeNumber() : 0));
+                    break;
+                case "date":
+                case "pubdate":
+                default:
+                    return intval($element->getPubdate("U"));
+            endswitch;
+
         }, $episodes);
-        array_multisort($episodes, strpos(strtolower($sortby), " desc" ) ? SORT_DESC : SORT_ASC, $dates);
+
+        if (!array_multisort($sort_keys, $sort_direction == "desc" ? SORT_DESC : SORT_ASC, $episodes)) throw new Exception('Could not sort episodes!');
         return $episodes;
     }
 
