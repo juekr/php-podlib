@@ -250,7 +250,7 @@ class PodcastDBWrapper {
         if ($this->debug) echo ($del ? $del->rowCount()." deleted from tags\n" : "nothing deleted from tags\n");
     }
 
-    public function insertOrUpdateEpisodes(PodcastFeed $podcast, string $remapTagMdFile = null) {
+    public function insertOrUpdateEpisodes(PodcastFeed $podcast, string|null $remapTagMdFile = null) {
         $berlin = new DateTimeZone("Europe/Berlin");
         $now = new DateTime("now", $berlin);
 
