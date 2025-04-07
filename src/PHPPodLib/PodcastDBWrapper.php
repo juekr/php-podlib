@@ -255,7 +255,7 @@ class PodcastDBWrapper {
         $now = new DateTime("now", $berlin);
 
         $episodes = $podcast->getEpisodes();
-        if (count($episodes) == 0): 
+        if (count($episodes ?? 0) == 0): 
             if ($this->debug) echo " err: no episodes in feed for podcast".$podcast->getFeedURL()."\n";
             return false;
         endif;
