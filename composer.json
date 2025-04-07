@@ -4,8 +4,8 @@
         "phpunit/phpunit": "^9"
     },
     "require": {
-        "neitanod/forceutf8": "^2.0",
-        "symfony/polyfill-mbstring": "^1.23",
+        "neitanod/forceutf8": "2.*",
+        "symfony/polyfill-mbstring": "1.*",
         "symfony/cache": "*"
     },
     "autoload": {

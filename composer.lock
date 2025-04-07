@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "4554207b39f57b5ce2b8eda66eb76585",
+    "content-hash": "5042e043ac13d10fcbe502b02420f93f",
     "packages": [
         {
             "name": "neitanod/forceutf8",
