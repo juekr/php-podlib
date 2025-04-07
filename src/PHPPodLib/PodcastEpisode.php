@@ -32,7 +32,7 @@ class PodcastEpisode {
         "link" => null
     );
 
-    public function __construct(\SimpleXMLElement $item = null, bool $debug = false) {
+    public function __construct(\SimpleXMLElement|null $item = null, bool $debug = false) {
         $this->debug = $debug;
         if ($item == null || empty($item)):
             if ($debug):
@@ -500,7 +500,7 @@ class PodcastEpisode {
             return $player;
     }
 
-    private function chapters2string(array $chapters = null) {
+    private function chapters2string(array|null $chapters = null) {
         if (is_null($chapters)) $chapters = $this->getChapters();
         if (empty($chapters)) return "";
         $charr = array();
