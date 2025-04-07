@@ -78,7 +78,7 @@ class PodcastEpisode {
     public function getSeason() { return $this->getMeta("season"); }
     public function getLink() { return $this->getMeta("link"); }
 
-    private function getMeta(string $key = null) 
+    private function getMeta(string|null $key = null) 
     {
         if ($key === null) return $this->meta;
         if (in_array($key, array_keys($this->meta))) return $this->meta[$key];
@@ -283,7 +283,7 @@ class PodcastEpisode {
     }
 
     // public function isMatch(string $matchtype = null, string $field = null, string $pattern = null) {
-    public function isMatch(string $matchtype = null, string $fieldOrFieldFunction = null, string $pattern = null) {
+    public function isMatch(string|null $matchtype = null, string|null $fieldOrFieldFunction = null, string|null $pattern = null) {
         // Currently the function for matching tags, title, episodetype and basically every other xml tag content support searching for "string", substring or subarray "contains" or "regex" patterns
         if ($fieldOrFieldFunction == null) return false;
         if (!isset($this->meta[$fieldOrFieldFunction]) || $this->meta[$fieldOrFieldFunction] === null):
