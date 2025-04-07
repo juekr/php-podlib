@@ -281,7 +281,7 @@ class PodcastFeed {
 		Wahre Kriminalfälle";
 
 
-    public function __construct(string $feed = null, bool $debug = false, bool $autoload = false, $use_cache = false)
+    public function __construct(string|null $feed = null, bool $debug = false, bool $autoload = false, $use_cache = false)
     {
         if ($feed != null) $this->setFeed($feed);
         if ($debug === true) $this->debug = true;
@@ -354,7 +354,7 @@ class PodcastFeed {
         if (is_array($categories) && count($categories) > 0) return $translated ? $this->translateCategory($categories[0], true): $categories[0];
     }
 
-    public function getMeta(string $key = null) {
+    public function getMeta(string|null $key = null) {
         if ($key == null) return $this->meta;
         if (in_array($key, array_keys($this->meta))) return $this->meta[$key];
         return null;
@@ -478,7 +478,7 @@ class PodcastFeed {
         return $tagArrayByOccurrence;
 	}
 
-public function getFilteredEpisodes(string $matchtype = null, string $field = null, string $pattern = null) {
+public function getFilteredEpisodes(string|null $matchtype = null, string|null $field = null, string|null $pattern = null) {
         // ToDo: UNTESTED
         // Loop through episodes and collect the ones that match our search criteria
         if (!is_array($this->episodes) || count($this->episodes) == 0):
@@ -510,7 +510,7 @@ public function getFilteredEpisodes(string $matchtype = null, string $field = nu
         return $this->isValidFeed;
     }
 
-    public function setFeedCacheDuration(int $duration = 12 * 60 * 60, int $random_factor = null) : int
+    public function setFeedCacheDuration(int $duration = 12 * 60 * 60, int|null $random_factor = null) : int
     {
         if (empty($random_factor)): 
             $this->feedCacheDuration = $duration;
@@ -520,7 +520,7 @@ public function getFilteredEpisodes(string $matchtype = null, string $field = nu
         return $this->feedCacheDuration;
     }
 
-    public function isValidUrl(string $url = null) {
+    public function isValidUrl(string|null $url = null) {
         // Just checking to see if it possibly is an URL – we don't care if it is reachable or not
         if ($url == null) {
             if ($this->debug) echo "INFO: no url specified, using (hopefully) pre-set feed url instead\n".$this->feedUrl."\n";
@@ -537,7 +537,7 @@ public function getFilteredEpisodes(string $matchtype = null, string $field = nu
         return true;
     }
 
-    public function isValidUTF8XML(string $string = null) { 
+    public function isValidUTF8XML(string|null $string = null) { 
         // Check the feed string for XML tags and encoding
         if ($string == null) return false;
         if (trim($string) == "") return false;
@@ -546,7 +546,7 @@ public function getFilteredEpisodes(string $matchtype = null, string $field = nu
         return true;
     }
 
-    public function loadFeedXml(string $rawContent = null) {
+    public function loadFeedXml(string|null $rawContent = null) {
         // Loading XML from a string (not a file!) into a simple_xml object.
         if (!isset($rawContent) || $rawContent == null || trim($rawContent) == "") {
             if ($this->debug) echo "ERROR: feed is empty | $rawContent\n";
@@ -596,7 +596,7 @@ public function getFilteredEpisodes(string $matchtype = null, string $field = nu
     }
 
     // Alle meta gathering functions come together here
-    private function extractMetaFromFeed(string $key = null) {
+    private function extractMetaFromFeed(string|null $key = null) {
         /*
             Stylesheet is the only piece of information that gets collected during loadFeedXML() – because it is not part of the simpleXML dom and we don't want to save the entire raw feed.
             $this->stylesheet = $this->extractStylesheet();
