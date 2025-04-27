@@ -479,7 +479,7 @@ class PodcastDBWrapper {
             #if (empty($tags)):
             $step_tags = $this->find_tags_by_regex_1step(
                 $haystack = $haystack,
-                $regex = "!#([a-zA-Z0-9-_üÜöÖäÄß\ ]{3,})(?=(?:[#,\n]{1,2}|\s{2,}|\s---\s|$:?)+)!im",
+                $regex = "!#([a-zA-Z0-9-_üÜöÖäÄß\ ]{3,})(?=(?:[#,\n]{1,2}|\s{2,}|\s---\s|<|$:?)+)!im",
                 $regex_exclude = $regex_exclude
             );
             #endif;
