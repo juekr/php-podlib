@@ -1,10 +1,9 @@
 # php-podlib
 a podcast parsing library for PHP
 
-`./vendor/bin/phpunit vendor/juekr/php-podlib/*_test.php`
+Look, I am no developer. I hacked this together to feed a bunch of my websites, but I take no responsibility whatsoever if you decide to build something on top of this (very fragile) frankenmosnter of mine. That being said: use it – or don't, it's fine. Just don't do evil shit with it, and maybe you want to mention the source if you decide to build upon it. Thanks.
 
-==IMPORTANT==
- You have to do a `composer update` first
+`./vendor/bin/phpunit vendor/juekr/php-podlib/*_test.php`
 
 ## Instructions
 
